@@ -2336,15 +2336,8 @@ function updateProgressChart() {
 }
   
 
-      </svg>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                  font-size: 2rem; font-weight: bold; color: var(--accent-primary);"
-           aria-hidden="true">
-        ${percentage}%
-      </div>
-    </div>
-  `;
-  
+    
+
   console.log('Task chart HTML set');
 
 
@@ -6444,6 +6437,7 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+
 
 
 

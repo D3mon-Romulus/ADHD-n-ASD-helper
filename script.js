@@ -2334,13 +2334,7 @@ function updateProgressChart() {
     <!-- rest of your chart HTML -->
   `;
 }
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
-      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
-        ${completed} of ${total} tasks completed (${percentage}%)
-      </p>
-    </div>
+  
     <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
       <svg width="200" height="200" style="transform: rotate(-90deg);" role="img" aria-label="Task completion progress: ${percentage} percent">
         <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-color)" stroke-width="20"/>
@@ -6456,4 +6450,5 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+
 

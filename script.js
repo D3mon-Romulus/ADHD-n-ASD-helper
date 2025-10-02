@@ -417,6 +417,25 @@ const AudioManager = {
 // ============================================================================
 // ENHANCED VOICE SYSTEM WITH IMPROVED TIMING
 // ============================================================================
+function testVoice() {
+  if (!VoiceSystem.isSupported) {
+    alert('Voice synthesis not supported in this browser');
+    return;
+  }
+  
+  VoiceSystem.speak('This is a test of the voice system. Can you hear me clearly?', {
+    context: 'success',
+    priority: 'high'
+  });
+}
+
+function speakTaskExample() {
+  VoiceSystem.speakTaskCompletion('brush your teeth');
+}
+
+function speakBehaviorExample() {
+  VoiceSystem.speakBehaviorEncouragement('Focused');
+}
 
 const VoiceSystem = {
   settings: {
@@ -6407,5 +6426,6 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 // Continue with remaining functions in next part due to length...

@@ -2335,13 +2335,7 @@ function updateProgressChart() {
   `;
 }
   
-    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
-      <svg width="200" height="200" style="transform: rotate(-90deg);" role="img" aria-label="Task completion progress: ${percentage} percent">
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-color)" stroke-width="20"/>
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" 
-                stroke-width="20" stroke-dasharray="${2 * Math.PI * 80}" 
-                stroke-dashoffset="${2 * Math.PI * 80 * (1 - percentage / 100)}"
-                style="transition: stroke-dashoffset 1s ease;"/>
+
       </svg>
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                   font-size: 2rem; font-weight: bold; color: var(--accent-primary);"
@@ -6450,5 +6444,6 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+
 
 

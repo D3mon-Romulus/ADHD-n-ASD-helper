@@ -2331,14 +2331,13 @@ function updateProgressChart() {
         ${completed} of ${total} tasks completed (${percentage}%)
       </p>
     </div>
-    <!-- rest of your chart HTML -->
-  `;
+   // <!-- rest of your chart HTML -->
+
 }
   
 
     
 
-  console.log('Task chart HTML set');
 
 
 function createBehaviorChart(profile) {
@@ -6437,6 +6436,7 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+
 
 
 

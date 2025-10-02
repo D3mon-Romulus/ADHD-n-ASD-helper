@@ -2303,10 +2303,37 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   updateUI();
-  
+   updateProgressChart();
   console.log('App initialized successfully');
 });
  // Enhanced chart with better accessibility
+// Add this function (probably near other chart/progress functions)
+function updateProgressChart() {
+  const chartContainer = document.getElementById('progressChart') || document.querySelector('.progress-chart');
+  
+  if (!chartContainer) {
+    console.warn('Chart container not found');
+    return;
+  }
+  
+  const profile = AppState.getCurrentProfile();
+  if (!profile) return;
+  
+  const total = profile.tasks.length;
+  const completed = profile.tasks.filter(t => t.completed).length;
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  // Enhanced chart with better accessibility
+  chartContainer.innerHTML = `
+    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
+      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
+      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
+        ${completed} of ${total} tasks completed (${percentage}%)
+      </p>
+    </div>
+    <!-- rest of your chart HTML -->
+  `;
+}
   chartContainer.innerHTML = `
     <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
       <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
@@ -6429,3 +6456,4 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+

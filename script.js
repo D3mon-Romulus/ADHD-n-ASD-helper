@@ -4,7 +4,7 @@
 // Fixed timer, per-profile themes, improved AI suggestions, better error handling
 // Enhanced voice timing system and improved audio management
 // Compatible with the provided HTML and CSS
-
+console.log('Script.js is loading...');
 'use strict';
 
 
@@ -6437,6 +6437,7 @@ function openParentDashboard() {
 
 
 // Continue with remaining functions in next part due to length...
+
 
 
 

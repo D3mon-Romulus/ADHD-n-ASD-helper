@@ -2288,30 +2288,7 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('App initialized successfully');
 });
  // Enhanced chart with better accessibility
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
-      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
-        ${completed} of ${total} tasks completed (${percentage}%)
-      </p>
-    </div>
-    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
-      <svg width="200" height="200" style="transform: rotate(-90deg);" role="img" aria-label="Task completion progress: ${percentage} percent">
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-color)" stroke-width="20"/>
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" 
-                stroke-width="20" stroke-dasharray="${2 * Math.PI * 80}" 
-                stroke-dashoffset="${2 * Math.PI * 80 * (1 - percentage / 100)}"
-                style="transition: stroke-dashoffset 1s ease;"/>
-      </svg>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                  font-size: 2rem; font-weight: bold; color: var(--accent-primary);"
-           aria-hidden="true">
-        ${percentage}%
-      </div>
-    </div>
-  `;
-  
-  console.log('Task chart HTML set');
+ 
 
 
 function createBehaviorChart(profile) {
@@ -6407,4 +6384,5 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 

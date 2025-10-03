@@ -909,7 +909,7 @@ function speakSuccess(message) {
   VoiceSystem.speakSuccess(message);
 }
 
-function testVoice() {
+function testVoiceNow() {
   console.log('Testing voice immediately...');
   
   if ('speechSynthesis' in window) {
@@ -1785,6 +1785,10 @@ const AppState = {
   }
 };
 // ============================================================================
+// CONTINUATION OF ADHD HELPER JAVASCRIPT - APPEND TO PART 1
+// ============================================================================
+
+
 // Timer Functions
 function startTimer(minutes) {
   return TimerSystem.start(minutes);
@@ -2010,8 +2014,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('App initialized successfully');
 });
- // Enhanced chart with better accessibility
  
+  
+  console.log('Task chart HTML set');
 
 
 function createBehaviorChart(profile) {
@@ -3740,15 +3745,7 @@ function playBrownNoise() {
     showErrorMessage('Could not play brown noise');
   }
 }
-function toggleInfoPanel() {
-  const panel = Utils.safeGetElement('infoPanel');
-  if (panel) {
-    const isVisible = panel.style.display === 'block';
-    panel.style.display = isVisible ? 'none' : 'block';
-    panel.setAttribute('aria-hidden', isVisible ? 'true' : 'false');
-    // ... rest of function
-  }
-}
+
 function playHeartbeat() {
   AudioManager.stopAllSounds();
   
@@ -5015,33 +5012,25 @@ function showInfoTab(tabName, e) {
     tab.classList.remove('active');
     tab.setAttribute('aria-selected', 'false');
   });
-  
+}
   // Show selected section
   const selectedSection = document.getElementById(tabName + '-info');
   if (selectedSection) {
     selectedSection.classList.add('active');
   }
-  
-  // Add active class to clicked tab
+    // Add active class to clicked tab
   if (e && e.target) {
     e.target.classList.add('active');
     e.target.setAttribute('aria-selected', 'true');
   }
   
   Utils.announceToScreenReader(`Switched to ${tabName} information`);
-}
-  const selectedSection = Utils.safeGetElement(tabName + '-info');
-  if (selectedSection) {
-    selectedSection.classList.add('active');
-  }
+
   
-  const clickedTab = document.querySelector(`.info-tab[onclick*="${tabName}"]`);
-  if (clickedTab) {
-    clickedTab.classList.add('active');
-    clickedTab.setAttribute('aria-selected', 'true');
-  }
+ 
+ 
   
-  Utils.announceToScreenReader(`Switched to ${tabName} information`);
+ 
 
 
 function showResources() {
@@ -5293,56 +5282,6 @@ function toggleVoicePrompts() {
   const status = voiceEnabled.checked ? 'enabled' : 'disabled';
   Utils.announceToScreenReader(`Voice prompts ${status}`);
 }
-// VOICE CONTROL FUNCTIONS
-// ============================================================================
-
-// Test voice button function
-function testVoice() {
-  console.log('testVoice() called');
-  
-  if (typeof VoiceSystem === 'undefined' || !VoiceSystem.isSupported) {
-    alert('Voice system not available');
-    return;
-  }
-  
-  VoiceSystem.speak('Hello! This is a test of the voice system. Can you hear me clearly?', {
-    context: 'general',
-    priority: 'high',
-    interrupt: true
-  });
-  
-  showSuccessMessage('Testing voice...');
-}
-
-// Test task completion voice
-function speakTaskExample() {
-  console.log('speakTaskExample() called');
-  
-  if (typeof VoiceSystem === 'undefined' || !VoiceSystem.isSupported) {
-    alert('Voice system not available');
-    return;
-  }
-  
-  VoiceSystem.speakTaskCompletion('finish your homework');
-  showSuccessMessage('Testing task voice...');
-}
-
-// Test behavior encouragement voice
-function speakBehaviorExample() {
-  console.log('speakBehaviorExample() called');
-  
-  if (typeof VoiceSystem === 'undefined' || !VoiceSystem.isSupported) {
-    alert('Voice system not available');
-    return;
-  }
-  
-  VoiceSystem.speakBehaviorEncouragement('Focused');
-  showSuccessMessage('Testing behavior voice...');
-}
-
-
-function updateSelectedVoice() {
-  // ... rest of your code
 
 // ============================================================================
 // INITIALIZATION
@@ -5437,6 +5376,7 @@ function activateSOSMode() {
     
     Utils.announceToScreenReader('Emergency calming mode activated');
   }
+}
 
 function exitSOSMode() {
   const duration = sosStartTime ? Math.round((Date.now() - sosStartTime) / 1000) : 0;
@@ -5477,7 +5417,7 @@ function exitSOSMode() {
   showSuccessMessage('You did an amazing job calming down!');
   Utils.announceToScreenReader('Calming mode ended successfully');
 }
-}
+
 // Simple SOS Breathing
 
 
@@ -6164,12 +6104,4 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
-}
-
-
-
-
-
-
-
 

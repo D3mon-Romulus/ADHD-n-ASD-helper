@@ -5562,6 +5562,67 @@ function toggleVoicePrompts() {
   const status = voiceEnabled.checked ? 'enabled' : 'disabled';
   Utils.announceToScreenReader(`Voice prompts ${status}`);
 }
+// VOICE CONTROL FUNCTIONS
+// ============================================================================
+
+// MISSING FUNCTION 1: testVoice - Called from HTML button
+function testVoice() {
+  console.log('testVoice() called from button');
+  
+  if (!VoiceSystem.isSupported) {
+    showErrorMessage('Voice system not supported in this browser');
+    return;
+  }
+  
+  // Test with current settings
+  const testMessage = 'Hello! This is a test of the voice system. Can you hear me clearly?';
+  
+  VoiceSystem.speak(testMessage, {
+    context: 'general',
+    priority: 'high',
+    interrupt: true
+  });
+  
+  showSuccessMessage('Testing voice...');
+  Utils.announceToScreenReader('Voice test started');
+}
+
+// MISSING FUNCTION 2: speakTaskExample - Called from HTML button
+function speakTaskExample() {
+  console.log('speakTaskExample() called from button');
+  
+  if (!VoiceSystem.isSupported) {
+    showErrorMessage('Voice system not supported in this browser');
+    return;
+  }
+  
+  // Test task completion voice
+  const exampleTask = 'finish your homework';
+  VoiceSystem.speakTaskCompletion(exampleTask);
+  
+  showSuccessMessage('Testing task completion voice...');
+  Utils.announceToScreenReader('Task completion voice test started');
+}
+
+// MISSING FUNCTION 3: speakBehaviorExample - Called from HTML button
+function speakBehaviorExample() {
+  console.log('speakBehaviorExample() called from button');
+  
+  if (!VoiceSystem.isSupported) {
+    showErrorMessage('Voice system not supported in this browser');
+    return;
+  }
+  
+  // Test behavior encouragement voice
+  const exampleBehavior = 'Focused';
+  VoiceSystem.speakBehaviorEncouragement(exampleBehavior);
+  
+  showSuccessMessage('Testing behavior encouragement voice...');
+  Utils.announceToScreenReader('Behavior encouragement voice test started');
+}
+
+function updateSelectedVoice() {
+  // ... rest of your code
 
 // ============================================================================
 // INITIALIZATION
@@ -6384,5 +6445,6 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 

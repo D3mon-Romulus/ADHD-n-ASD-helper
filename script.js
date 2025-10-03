@@ -909,7 +909,7 @@ function speakSuccess(message) {
   VoiceSystem.speakSuccess(message);
 }
 
-function testVoiceNow() {
+function testVoice() {
   console.log('Testing voice immediately...');
   
   if ('speechSynthesis' in window) {
@@ -6434,6 +6434,7 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 
 

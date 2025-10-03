@@ -1855,70 +1855,8 @@ function createTaskProgressChart(profile) {
   console.log('Task chart HTML set');
 }
 
-function createBehaviorChart(profile) {
-  console.log('Creating behavior chart...');
-  const chartContainer = getOrCreateChartContainer('behaviorChart', 'Positive Behaviors');
-  
-  const behaviors = profile.behaviors || [];
-  const last7Days = getLast7DaysData(behaviors);
-  console.log('Behavior data for last 7 days:', last7Days);
-  
-  const maxCount = Math.max(...last7Days.map(d => d.count), 1);
-  
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem;">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Weekly Behavior Tracking</h4>
-      <p style="margin: 0.5rem 0; color: var(--text-secondary);">Positive behaviors per day</p>
-    </div>
-    <div style="display: flex; align-items: end; justify-content: space-between; height: 150px; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;"
-         role="img" aria-label="Bar chart showing daily positive behavior counts for the past week">
-      ${last7Days.map((day, index) => `
-        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-          <div style="background: var(--accent-secondary); width: 20px; margin-bottom: 0.5rem; border-radius: 4px 4px 0 0;
-                      height: ${Math.max((day.count / maxCount) * 100, 5)}px; transition: height 0.5s ease;"
-               aria-label="${day.day}: ${day.count} behaviors"></div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary);">${day.day}</div>
-          <div style="font-size: 0.7rem; color: var(--text-primary); font-weight: bold;">${day.count}</div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-  
-  console.log('Behavior chart HTML set');
-}
-
-function createPointsChart(profile) {
-  console.log('Creating points chart...');
-  const chartContainer = getOrCreateChartContainer('pointsChart', 'Points Progress');
-  
-  const totalPoints = profile.rewardPoints || 0;
-  const goalPoints = 100;
-  const percentage = Math.min((totalPoints / goalPoints) * 100, 100);
-  
-  console.log('Total points:', totalPoints);
-  
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem;">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Points Earned</h4>
-      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
-        Total: ${totalPoints} points
-      </p>
-    </div>
-    <div style="height: 100px; background: var(--bg-secondary); border-radius: 8px; padding: 1rem; position: relative; overflow: hidden;"
-         role="progressbar" aria-valuenow="${totalPoints}" aria-valuemin="0" aria-valuemax="${goalPoints}" aria-label="Points progress">
-      <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; 
-                  background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary)); 
-                  width: ${percentage}%; 
-                  transition: width 1s ease; border-radius: 0 0 8px 8px;"></div>
-      <div style="position: relative; z-index: 1; text-align: center; line-height: 70px; 
-                  font-size: 1.5rem; font-weight: bold; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-        ${totalPoints} / ${goalPoints}
-      </div>
-    </div>
-  `;
-  
-  console.log('Points chart HTML set');
-}
+ 
+   
 
 function createWeeklyProgressChart(profile) {
   console.log('Creating weekly chart...');
@@ -6434,6 +6372,7 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 
 

@@ -4,7 +4,7 @@
 // Fixed timer, per-profile themes, improved AI suggestions, better error handling
 // Enhanced voice timing system and improved audio management
 // Compatible with the provided HTML and CSS
-console.log('Script.js is loading...');
+
 'use strict';
 
 
@@ -417,25 +417,6 @@ const AudioManager = {
 // ============================================================================
 // ENHANCED VOICE SYSTEM WITH IMPROVED TIMING
 // ============================================================================
-function testVoice() {
-  if (!VoiceSystem.isSupported) {
-    alert('Voice synthesis not supported in this browser');
-    return;
-  }
-  
-  VoiceSystem.speak('This is a test of the voice system. Can you hear me clearly?', {
-    context: 'success',
-    priority: 'high'
-  });
-}
-
-function speakTaskExample() {
-  VoiceSystem.speakTaskCompletion('brush your teeth');
-}
-
-function speakBehaviorExample() {
-  VoiceSystem.speakBehaviorEncouragement('Focused');
-}
 
 const VoiceSystem = {
   settings: {
@@ -2303,27 +2284,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   updateUI();
-   updateProgressChart();
+  
   console.log('App initialized successfully');
 });
  // Enhanced chart with better accessibility
-// Add this function (probably near other chart/progress functions)
-function updateProgressChart() {
-  const chartContainer = document.getElementById('progressChart') || document.querySelector('.progress-chart');
-  
-  if (!chartContainer) {
-    console.warn('Chart container not found');
-    return;
-  }
-  
-  const profile = AppState.getCurrentProfile();
-  if (!profile) return;
-  
-  const total = profile.tasks.length;
-  const completed = profile.tasks.filter(t => t.completed).length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  
-  // Enhanced chart with better accessibility
   chartContainer.innerHTML = `
     <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
       <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
@@ -2331,13 +2295,23 @@ function updateProgressChart() {
         ${completed} of ${total} tasks completed (${percentage}%)
       </p>
     </div>
-   // <!-- rest of your chart HTML -->
-
-}
+    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+      <svg width="200" height="200" style="transform: rotate(-90deg);" role="img" aria-label="Task completion progress: ${percentage} percent">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-color)" stroke-width="20"/>
+        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" 
+                stroke-width="20" stroke-dasharray="${2 * Math.PI * 80}" 
+                stroke-dashoffset="${2 * Math.PI * 80 * (1 - percentage / 100)}"
+                style="transition: stroke-dashoffset 1s ease;"/>
+      </svg>
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                  font-size: 2rem; font-weight: bold; color: var(--accent-primary);"
+           aria-hidden="true">
+        ${percentage}%
+      </div>
+    </div>
+  `;
   
-
-    
-
+  console.log('Task chart HTML set');
 
 
 function createBehaviorChart(profile) {
@@ -6433,12 +6407,4 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
-
-
-// Continue with remaining functions in next part due to length...
-
-
-
-
-
 

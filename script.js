@@ -3740,7 +3740,15 @@ function playBrownNoise() {
     showErrorMessage('Could not play brown noise');
   }
 }
-
+function toggleInfoPanel() {
+  const panel = Utils.safeGetElement('infoPanel');
+  if (panel) {
+    const isVisible = panel.style.display === 'block';
+    panel.style.display = isVisible ? 'none' : 'block';
+    panel.setAttribute('aria-hidden', isVisible ? 'true' : 'false');
+    // ... rest of function
+  }
+}
 function playHeartbeat() {
   AudioManager.stopAllSounds();
   
@@ -5429,7 +5437,6 @@ function activateSOSMode() {
     
     Utils.announceToScreenReader('Emergency calming mode activated');
   }
-}
 
 function exitSOSMode() {
   const duration = sosStartTime ? Math.round((Date.now() - sosStartTime) / 1000) : 0;
@@ -5470,7 +5477,7 @@ function exitSOSMode() {
   showSuccessMessage('You did an amazing job calming down!');
   Utils.announceToScreenReader('Calming mode ended successfully');
 }
-
+}
 // Simple SOS Breathing
 
 
@@ -6156,6 +6163,7 @@ function openParentDashboard() {
   document.getElementById('parentDashboard').setAttribute('aria-hidden', 'false');
   loadParentSettings();
   updateChildStats();
+}
 }
 
 

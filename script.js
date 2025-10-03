@@ -1785,36 +1785,6 @@ const AppState = {
   }
 };
 // ============================================================================
-// CONTINUATION OF ADHD HELPER JAVASCRIPT - APPEND TO PART 1
-// ============================================================================
-
-
-  
-
-        
-  `;
-
- 
-  
- 
-  
-     
-    
-  
- 
- 
-   
-                   
-  
-
-    
-   
-  
-
-  
-  
-
-
 // Timer Functions
 function startTimer(minutes) {
   return TimerSystem.start(minutes);
@@ -6187,6 +6157,7 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 
 

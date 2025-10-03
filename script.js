@@ -1788,217 +1788,32 @@ const AppState = {
 // CONTINUATION OF ADHD HELPER JAVASCRIPT - APPEND TO PART 1
 // ============================================================================
 
-// Main Functions - Charts
-function updateCharts() {
-  console.log('updateCharts called - starting chart creation...');
-  
-  if (AppState.currentProfile) {
-    const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-    if (profile) {
-      console.log('Profile found:', profile.name);
-      
-      updateTaskDisplay(profile.tasks);
-      updateBehaviorDisplay(profile.behaviors);
-      updateRewardDisplay(profile.rewardPoints || 0);
-      
-      createTaskProgressChart(profile);
-      createBehaviorChart(profile);
-      createPointsChart(profile);
-      createWeeklyProgressChart(profile);
-      
-      console.log('All charts created');
-    } else {
-      console.log('No profile found with ID:', AppState.currentProfile);
-    }
-  } else {
-    console.log('No current profile selected');
-    clearAllCharts();
-  }
-  
-  showSuccessMessage('Charts updated!');
-}
 
-function createTaskProgressChart(profile) {
-  console.log('Creating task progress chart...');
-  const chartContainer = getOrCreateChartContainer('taskProgressChart', 'Task Progress');
   
-  const tasks = profile.tasks || [];
-  const completed = tasks.filter(t => t.completed).length;
-  const total = tasks.length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  
-  console.log(`Task stats: ${completed}/${total} = ${percentage}%`);
-  
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Progress</h4>
-      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
-        ${completed} of ${total} tasks completed (${percentage}%)
-      </p>
-    </div>
-    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
-      <svg width="200" height="200" style="transform: rotate(-90deg);" role="img" aria-label="Task completion progress: ${percentage} percent">
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-color)" stroke-width="20"/>
-        <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent-primary)" 
-                stroke-width="20" stroke-dasharray="${2 * Math.PI * 80}" 
-                stroke-dashoffset="${2 * Math.PI * 80 * (1 - percentage / 100)}"
-                style="transition: stroke-dashoffset 1s ease;"/>
-      </svg>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                  font-size: 2rem; font-weight: bold; color: var(--accent-primary);"
-           aria-hidden="true">
-        ${percentage}%
-      </div>
-    </div>
+
+        
   `;
-  
-  console.log('Task chart HTML set');
-}
 
  
+  
+ 
+  
+     
+    
+  
+ 
+ 
    
+                   
+  
 
-function createWeeklyProgressChart(profile) {
-  console.log('Creating weekly chart...');
-  const chartContainer = getOrCreateChartContainer('weeklyChart', 'Weekly Overview');
+    
+   
   
-  const tasks = profile.tasks || [];
-  const behaviors = profile.behaviors || [];
-  
-  const thisWeekTasks = getThisWeekData(tasks, 'dateCompleted');
-  const thisWeekBehaviors = getThisWeekData(behaviors, 'time');
-  
-  console.log('This week stats - Tasks:', thisWeekTasks, 'Behaviors:', thisWeekBehaviors);
-  
-  chartContainer.innerHTML = `
-    <div style="text-align: center; margin-bottom: 1rem;">
-      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">This Week's Summary</h4>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-      <div style="text-align: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;"
-           role="status" aria-label="Tasks completed this week">
-        <div style="font-size: 2rem; color: var(--accent-primary); font-weight: bold;">${thisWeekTasks}</div>
-        <div style="font-size: 0.9rem; color: var(--text-secondary);">Tasks Completed</div>
-      </div>
-      <div style="text-align: center; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;"
-           role="status" aria-label="Positive behaviors this week">
-        <div style="font-size: 2rem; color: var(--accent-secondary); font-weight: bold;">${thisWeekBehaviors}</div>
-        <div style="font-size: 0.9rem; color: var(--text-secondary);">Positive Behaviors</div>
-      </div>
-    </div>
-  `;
-  
-  console.log('Weekly chart HTML set');
-}
 
-function getOrCreateChartContainer(id, title) {
-  console.log('Getting/creating container for:', id);
   
-  let container = document.getElementById(id);
   
-  if (!container) {
-    console.log('Container not found, creating new one');
-    
-    container = document.createElement('div');
-    container.id = id;
-    container.className = 'chart-container';
-    container.style.cssText = `
-      margin: 1rem 0; 
-      padding: 1.5rem; 
-      border: 2px solid var(--border-color); 
-      border-radius: 12px; 
-      background: var(--bg-primary);
-      box-shadow: 0 4px 8px var(--shadow);
-      min-height: 200px;
-      display: block;
-      visibility: visible;
-      opacity: 1;
-    `;
-    
-    let chartsContainer = document.getElementById('chartsContainer');
-    
-    if (!chartsContainer) {
-      console.log('Charts container not found in HTML, creating fallback');
-      chartsContainer = document.createElement('div');
-      chartsContainer.id = 'chartsContainer';
-      chartsContainer.style.cssText = `
-        margin: 2rem auto; 
-        padding: 2rem;
-        max-width: 1200px;
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        box-shadow: 0 2px 10px var(--shadow);
-        display: block;
-        visibility: visible;
-      `;
-      
-      const mainContent = document.querySelector('main') || 
-                         document.querySelector('.container') ||
-                         document.querySelector('.dashboard') ||
-                         document.body;
-      
-      mainContent.appendChild(chartsContainer);
-    } else {
-      const placeholder = chartsContainer.querySelector('p');
-      if (placeholder && placeholder.textContent.includes('Select a profile')) {
-        placeholder.remove();
-      }
-    }
-    
-    chartsContainer.appendChild(container);
-    console.log('Chart container created and appended to existing charts section');
-  }
-  
-  return container;
-}
 
-function getLast7DaysData(behaviors) {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const last7Days = [];
-  
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dayName = days[date.getDay()];
-    
-    const count = behaviors.filter(b => {
-      if (!b.time) return false;
-      const behaviorDate = new Date(b.time);
-      return behaviorDate.toDateString() === date.toDateString();
-    }).length;
-    
-    last7Days.push({ day: dayName, count });
-  }
-  
-  return last7Days;
-}
-
-function getThisWeekData(items, dateField) {
-  const now = new Date();
-  const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-  weekStart.setHours(0, 0, 0, 0);
-  
-  return items.filter(item => {
-    if (!item[dateField]) return false;
-    try {
-      const itemDate = new Date(item[dateField]);
-      return itemDate >= weekStart && itemDate <= new Date();
-    } catch (error) {
-      console.warn('Invalid date in item:', item);
-      return false;
-    }
-  }).length;
-}
-
-function clearAllCharts() {
-  const chartIds = ['taskProgressChart', 'behaviorChart', 'pointsChart', 'weeklyChart'];
-  chartIds.forEach(id => {
-    const chart = document.getElementById(id);
-    if (chart) {
-      chart.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Select a profile to view progress charts</p>';
-    }
-  });
-}
 
 // Timer Functions
 function startTimer(minutes) {
@@ -6372,6 +6187,7 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 
 

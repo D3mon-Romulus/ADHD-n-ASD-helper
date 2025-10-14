@@ -5013,18 +5013,7 @@ function showInfoTab(tabName, e) {
     tab.setAttribute('aria-selected', 'false');
   });
 }
-  // Show selected section
-  const selectedSection = document.getElementById(tabName + '-info');
-  if (selectedSection) {
-    selectedSection.classList.add('active');
-  }
-    // Add active class to clicked tab
-  if (e && e.target) {
-    e.target.classList.add('active');
-    e.target.setAttribute('aria-selected', 'true');
-  }
-  
-  Utils.announceToScreenReader(`Switched to ${tabName} information`);
+ 
 
   
  
@@ -6104,4 +6093,5 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 

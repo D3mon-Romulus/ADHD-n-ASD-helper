@@ -5001,10 +5001,15 @@ function toggleInfoPanel() {
   }
 }
 
-function showInfoTab(tabName, e) {
+function showInfoTab(tabName) {
+  console.log('showInfoTab called with:', tabName);
+  
   // Hide all sections
   const sections = document.querySelectorAll('.info-section');
-  sections.forEach(section => section.classList.remove('active'));
+  sections.forEach(section => {
+    section.classList.remove('active');
+    section.style.display = 'none';
+  });
   
   // Remove active class from all tabs
   const tabs = document.querySelectorAll('.info-tab');
@@ -5012,6 +5017,27 @@ function showInfoTab(tabName, e) {
     tab.classList.remove('active');
     tab.setAttribute('aria-selected', 'false');
   });
+  
+  // Show selected section
+  const selectedSection = document.getElementById(tabName + '-info');
+  if (selectedSection) {
+    selectedSection.classList.add('active');
+    selectedSection.style.display = 'block';
+    console.log('Showing section:', tabName + '-info');
+  } else {
+    console.error('Section not found:', tabName + '-info');
+  }
+  
+  // Add active to clicked tab - find the tab button
+  const clickedTab = Array.from(tabs).find(tab => 
+    tab.getAttribute('onclick')?.includes(tabName)
+  );
+  if (clickedTab) {
+    clickedTab.classList.add('active');
+    clickedTab.setAttribute('aria-selected', 'true');
+  }
+  
+  Utils.announceToScreenReader(`Switched to ${tabName} information`);
 }
  
 
@@ -6093,5 +6119,6 @@ function openParentDashboard() {
   loadParentSettings();
   updateChildStats();
 }
+
 
 

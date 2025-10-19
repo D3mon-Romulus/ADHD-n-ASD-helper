@@ -39,6 +39,45 @@
     <button class="accessibility-btn" onclick="decreaseFontSize()" title="Decrease Font Size" aria-label="Decrease font size">A-</button>
     <button class="accessibility-btn" onclick="toggleHighContrast()" title="Toggle High Contrast" aria-label="Toggle high contrast mode">🎨</button>
   </div>
+  <!-- Parent Profile Setup (shown for new users after welcome) -->
+<div id="parentProfilePanel" class="welcome-panel" style="display: none;" role="dialog" aria-labelledby="parent-profile-title">
+  <div class="welcome-content">
+    <h1 id="parent-profile-title">👨‍👩‍👧 Parent Information</h1>
+    <p>Let's set up your parent profile for emergency contacts and settings</p>
+    <div class="welcome-form">
+      <label for="parentNameInput">Parent/Guardian Name *</label>
+      <input type="text" id="parentNameInput" placeholder="Your name" maxlength="50" required aria-label="Parent name">
+      
+      <label for="parentEmailInput">Email Address</label>
+      <input type="email" id="parentEmailInput" placeholder="your.email@example.com" aria-label="Parent email">
+      
+      <label for="parentPhoneInput">Mobile Number *</label>
+      <input type="tel" id="parentPhoneInput" placeholder="+61 4XX XXX XXX" required aria-label="Parent phone number">
+      
+      <label for="parentRelationship">Relationship to Child</label>
+      <select id="parentRelationship" aria-label="Relationship to child">
+        <option value="parent">Parent</option>
+        <option value="guardian">Guardian</option>
+        <option value="caregiver">Caregiver</option>
+        <option value="grandparent">Grandparent</option>
+        <option value="other">Other</option>
+      </select>
+      
+      <label for="secondaryContactName">Secondary Contact Name</label>
+      <input type="text" id="secondaryContactName" placeholder="Optional backup contact" maxlength="50" aria-label="Secondary contact name">
+      
+      <label for="secondaryContactPhone">Secondary Contact Phone</label>
+      <input type="tel" id="secondaryContactPhone" placeholder="Optional backup number" aria-label="Secondary contact phone">
+      
+      <button onclick="saveParentProfile()" class="welcome-btn" aria-label="Save parent profile and continue">
+        Save & Continue 🚀
+      </button>
+      <button onclick="skipParentProfile()" class="skip-btn" aria-label="Skip for now">
+        Skip for Now
+      </button>
+    </div>
+  </div>
+</div>
 
   <!-- Header -->
   <header role="banner">
@@ -583,6 +622,7 @@
     <div class="info-content">
       <div class="info-header">
         <h2 id="info-panel-title">Help & Information</h2>
+        <button onclick="toggleInfoPanel()" class="help-btn" aria-label="Show help information">ℹ️ Help</button>
         <button class="close-btn" onclick="toggleInfoPanel()" aria-label="Close help panel">✖</button>
       </div>
       <div class="info-tabs" role="tablist" aria-label="Information categories">
@@ -723,7 +763,7 @@
             </div>
             
             <div class="voice-test">
-              <button onclick="testVoice()" class="test-voice-btn" aria-label="Test voice with sample text">🎤 Test Voice</button>
+              <button onclick="testVoiceNow()" class="test-voice-btn" aria-label="Test voice with sample text">🎤 Test Voice</button>
               <button onclick="speakTaskExample()" class="test-voice-btn" aria-label="Test voice with task completion example">📝 Test Task Voice</button>
               <button onclick="speakBehaviorExample()" class="test-voice-btn" aria-label="Test voice with behavior example">⭐ Test Behavior Voice</button>
             </div>
@@ -807,6 +847,13 @@
               <button onclick="exportData()" aria-label="Export all data">📤 Export Data</button>
               <button onclick="clearAllData()" class="danger-btn" aria-label="Clear all data (warning: irreversible)">🗑️ Clear All Data</button>
             </div>
+            <div class="parent-section">
+  <h3>👤 Parent Profile</h3>
+  <div class="parent-profile-display" id="parentProfileDisplay">
+    <!-- Will be populated by JavaScript -->
+  </div>
+  <button onclick="editParentProfile()" aria-label="Edit parent profile">✏️ Edit Profile</button>
+</div>
           </div>
         </div>
       </div>
@@ -855,6 +902,4 @@ if ('serviceWorker' in navigator) {
 
   <script src="script.js"></script>
 </body>
-
 </html>
-

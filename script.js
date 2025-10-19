@@ -7,9 +7,7 @@
 
 'use strict';
 
-
 // Global state variables - must be declared before use
-// let sosActive = false; // Removed duplicate declaration to fix redeclaration error
 let sosActive = false;
 let sosStartTime = null;
 let sosActivity = null;
@@ -22,11 +20,7 @@ let exerciseInterval = null;
 let exerciseTimeout = null;
 
 // ============================================================================
-// UTILITY FUNCTIONS (MOVED TO TOP)
-// ============================================================================
-
-// ============================================================================
-// UTILITY FUNCTIONS (MOVED TO TOP)
+// UTILITY FUNCTIONS
 // ============================================================================
 
 function showSuccessMessage(message) {
@@ -1294,14 +1288,14 @@ const TimerSystem = {
 };
 
 // ============================================================================
-// ENHANCED THEME MANAGER - FIXED
+// ENHANCED THEME MANAGER
 // ============================================================================
 
 const ThemeManager = {
   themes: {
     light: {
       name: 'Light',
-     // description: 'Clean and bright',
+      description: 'Clean and bright',
       colors: {
         '--bg-primary': '#ffffff',
         '--bg-secondary': '#f8f9fa',
@@ -1315,7 +1309,7 @@ const ThemeManager = {
     },
     dark: {
       name: 'Dark',
-      //description: 'Easy on the eyes',
+      description: 'Easy on the eyes',
       colors: {
         '--bg-primary': '#1a1a1a',
         '--bg-secondary': '#2d2d2d',
@@ -1571,8 +1565,10 @@ const AppState = {
     highContrast: false,
     taskPoints: 5,
     behaviorPoints: 3,
-    parentPin: null
+    parentPin: null,
+    emergencyContact: ''
   },
+  parentProfile: null,
   routines: [],
   currentView: 'list',
 
@@ -1610,6 +1606,7 @@ const AppState = {
         currentProfile: this.currentProfile,
         profiles: this.profiles || [],
         settings: this.settings || {},
+        parentProfile: this.parentProfile || null,
         routines: this.routines || [],
         currentView: this.currentView || 'list',
         version: '1.0',
@@ -1655,8 +1652,10 @@ const AppState = {
           highContrast: false,
           taskPoints: 5,
           behaviorPoints: 3,
-          parentPin: null
+          parentPin: null,
+          emergencyContact: ''
         }, data.settings || {});
+        this.parentProfile = data.parentProfile || null;
         this.routines = Array.isArray(data.routines) ? data.routines : [];
         this.currentView = data.currentView || 'list';
         
@@ -1705,8 +1704,10 @@ const AppState = {
       highContrast: false,
       taskPoints: 5,
       behaviorPoints: 3,
-      parentPin: Utils.hashPin('1234')
+      parentPin: Utils.hashPin('1234'),
+      emergencyContact: ''
     };
+    this.parentProfile = null;
     this.routines = [];
     this.currentView = 'list';
   },
@@ -1784,240 +1785,64 @@ const AppState = {
     }
   }
 };
+
 // ============================================================================
-// CONTINUATION OF ADHD HELPER JAVASCRIPT - APPEND TO PART 1
+// CHART FUNCTIONS (FIXED)
 // ============================================================================
 
-
-// Timer Functions
-function startTimer(minutes) {
-  return TimerSystem.start(minutes);
-}
-
-function stopTimer() {
-  TimerSystem.stop();
-}
-
-function updateTimerDisplay() {
-  TimerSystem.updateDisplay();
-}
-
-function startCustomTimer() {
-  TimerSystem.startCustom();
-}
-
-function openTimerSettings() {
-  TimerSystem.openSettings();
-}
-
-function closeTimerSettings() {
-  TimerSystem.closeSettings();
-}
-
-function saveTimerSettings() {
-  return TimerSystem.saveSettingsFromForm();
-}
-
-function resetTimerSettings() {
-  TimerSystem.resetSettings();
-}
-
-// Theme Functions
-function changeTheme(theme) {
-  ThemeManager.changeTheme(theme);
-}
-
-function showThemeSelector() {
-  const existingModal = document.querySelector('.theme-selector-modal');
-  if (existingModal) {
-    existingModal.remove();
+function updateCharts() {
+  if (!AppState.currentProfile) {
+    clearAllCharts();
+    return;
   }
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile) {
+    clearAllCharts();
+    return;
+  }
+  
+  createTaskChart(profile);
+  createBehaviorChart(profile);
+  createPointsChart(profile);
+  createWeeklyProgressChart(profile);
+}
 
-  const selector = ThemeManager.createThemeSelector();
+function createTaskChart(profile) {
+  console.log('Creating task chart...');
+  const chartContainer = getOrCreateChartContainer('taskProgressChart', 'Task Progress');
   
-  const modal = document.createElement('div');
-  modal.className = 'theme-selector-modal';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-labelledby', 'theme-modal-title');
-  modal.setAttribute('aria-modal', 'true');
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: var(--z-modal);
-    backdrop-filter: blur(4px);
-  `;
+  const tasks = profile.tasks || [];
+  const completedTasks = tasks.filter(t => t.completed).length;
+  const totalTasks = tasks.length;
+  const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   
-  const content = document.createElement('div');
-  content.style.cssText = `
-    background: var(--bg-primary);
-    padding: 2rem;
-    border-radius: 12px;
-    max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
-    box-shadow: 0 20px 40px var(--shadow);
-    border: 2px solid var(--accent-primary);
-  `;
+  console.log('Task data - Completed:', completedTasks, 'Total:', totalTasks);
   
-  const currentProfile = AppState.currentProfile ? 
-    AppState.profiles.find(p => p.id === AppState.currentProfile) : null;
-  
-  const headerText = currentProfile ? 
-    `Choose Theme for ${currentProfile.name}` : 
-    'Choose Global Theme';
-  
-  content.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h3 id="theme-modal-title" style="margin: 0; color: var(--text-primary);">${headerText}</h3>
-      <button onclick="closeThemeSelector()" style="
-        background: var(--accent-secondary); color: white; border: none;
-        padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;
-        font-size: 1rem; font-weight: bold;
-      " aria-label="Close theme selector">✕ Close</button>
+  chartContainer.innerHTML = `
+    <div style="text-align: center; margin-bottom: 1rem;">
+      <h4 style="margin: 0; color: var(--text-primary); font-size: 1.2rem;">Task Completion</h4>
+      <p style="margin: 0.5rem 0; color: var(--text-secondary);" role="status" aria-live="polite">
+        ${completedTasks} of ${totalTasks} tasks completed
+      </p>
     </div>
-    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
-      ${currentProfile ? 'This theme will be saved for this profile only.' : 'Select a profile first to save themes per child.'}
-    </p>
+    <div style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center;">
+      <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="Task completion progress: ${percentage}%">
+        <circle cx="90" cy="90" r="70" fill="none" stroke="var(--border-color)" stroke-width="20"/>
+        <circle cx="90" cy="90" r="70" fill="none" stroke="var(--accent-primary)" stroke-width="20"
+                stroke-dasharray="${percentage * 4.4} 440" 
+                stroke-dashoffset="0"
+                transform="rotate(-90 90 90)"
+                style="transition: stroke-dasharray 1s ease;"/>
+        <text x="90" y="95" text-anchor="middle" font-size="32" font-weight="bold" fill="var(--text-primary)">
+          ${percentage}%
+        </text>
+      </svg>
+    </div>
   `;
-  content.appendChild(selector);
-  
-  if (currentProfile) {
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = 'Reset to Global Theme';
-    resetBtn.style.cssText = `
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      background: var(--accent-color);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    `;
-    resetBtn.setAttribute('aria-label', 'Reset this profile to use the global theme');
-    resetBtn.onclick = () => {
-      delete currentProfile.preferredTheme;
-      AppState.saveData();
-      ThemeManager.applyTheme(AppState.settings.theme || 'light');
-      showSuccessMessage('Profile theme reset to global theme');
-      setTimeout(() => showThemeSelector(), 100);
-    };
-    content.appendChild(resetBtn);
-  }
-  
-  modal.appendChild(content);
-  
-  modal.onclick = (e) => {
-    if (e.target === modal) closeThemeSelector();
-  };
-  
-  const handleEscape = (e) => {
-    if (e.key === 'Escape') {
-      closeThemeSelector();
-      document.removeEventListener('keydown', handleEscape);
-    }
-  };
-  document.addEventListener('keydown', handleEscape);
-  
-  document.body.appendChild(modal);
-  
-  setTimeout(() => {
-    const firstThemeButton = modal.querySelector('.theme-btn');
-    if (firstThemeButton) {
-      firstThemeButton.focus();
-    }
-  }, 100);
-}
-
-function closeThemeSelector() {
-  const modal = document.querySelector('.theme-selector-modal');
-  if (modal) {
-    modal.remove();
-  }
-}
-
-// Accessibility Functions
-function increaseFontSize() {
-  if (AppState.settings.fontSize < 24) {
-    AppState.settings.fontSize += 2;
-    updateUI();
-    AppState.saveData();
-    showSuccessMessage('Font size increased');
-    Utils.announceToScreenReader('Font size increased');
-  }
-}
-
-function decreaseFontSize() {
-  if (AppState.settings.fontSize > 12) {
-    AppState.settings.fontSize -= 2;
-    updateUI();
-    AppState.saveData();
-    showSuccessMessage('Font size decreased');
-    Utils.announceToScreenReader('Font size decreased');
-  }
-}
-
-function toggleHighContrast() {
-  AppState.settings.highContrast = !AppState.settings.highContrast;
-  updateUI();
-  AppState.saveData();
-  const status = AppState.settings.highContrast ? 'enabled' : 'disabled';
-  showSuccessMessage(`High contrast ${status}`);
-  Utils.announceToScreenReader(`High contrast mode ${status}`);
-}
-
-function updateUI() {
-  document.body.setAttribute('data-theme', AppState.settings.theme);
-  document.body.style.fontSize = AppState.settings.fontSize + 'px';
-  
-  if (AppState.settings.highContrast) {
-    document.body.classList.add('high-contrast');
-  } else {
-    document.body.classList.remove('high-contrast');
-  }
-}
-
-// ============================================================================
-
-// ============================================================================
-
-
-
-// The file should end with:
-
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM Content Loaded - Initializing app...');
-  
-  AppState.init();
-  ThemeManager.init();
-  TimerSystem.init();
-  VoiceSystem.init();
-  
-  populateProfileSelector();
-  
-  if (AppState.currentProfile) {
-    switchProfile(AppState.currentProfile);
-  }
-  
-  if (AppState.profiles.length === 0) {
-    showWelcomePanel();
-  }
-  
-  updateUI();
-  
-  console.log('App initialized successfully');
-});
- 
   
   console.log('Task chart HTML set');
-
+}
 
 function createBehaviorChart(profile) {
   console.log('Creating behavior chart...');
@@ -2141,7 +1966,6 @@ function getOrCreateChartContainer(id, title) {
       opacity: 1;
     `;
     
-    // Use the existing chartsContainer from HTML instead of creating a new one
     let chartsContainer = document.getElementById('chartsContainer');
     
     if (!chartsContainer) {
@@ -2166,7 +1990,6 @@ function getOrCreateChartContainer(id, title) {
       
       mainContent.appendChild(chartsContainer);
     } else {
-      // Clear the placeholder text when adding first chart
       const placeholder = chartsContainer.querySelector('p');
       if (placeholder && placeholder.textContent.includes('Select a profile')) {
         placeholder.remove();
@@ -2180,7 +2003,6 @@ function getOrCreateChartContainer(id, title) {
   return container;
 }
 
-// Helper functions for chart data
 function getLast7DaysData(behaviors) {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const last7Days = [];
@@ -2360,12 +2182,10 @@ function showThemeSelector() {
   
   modal.appendChild(content);
   
-  // Close on background click
   modal.onclick = (e) => {
     if (e.target === modal) closeThemeSelector();
   };
   
-  // Close on Escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
       closeThemeSelector();
@@ -2376,7 +2196,6 @@ function showThemeSelector() {
   
   document.body.appendChild(modal);
   
-  // Focus management
   setTimeout(() => {
     const firstThemeButton = modal.querySelector('.theme-btn');
     if (firstThemeButton) {
@@ -2447,7 +2266,6 @@ function openProfileManager() {
     modal.setAttribute('aria-hidden', 'false');
     updateProfileList();
     
-    // Focus management
     const nameInput = Utils.safeGetElement('profileName');
     if (nameInput) {
       setTimeout(() => nameInput.focus(), 100);
@@ -2474,7 +2292,6 @@ function createProfile(name, age) {
     age = parseInt(profileAgeEl.value);
   }
   
-  // Enhanced validation and sanitization
   name = Utils.sanitizeInput(name, 50);
   
   if (!name || !Utils.validateAge(age)) {
@@ -2482,7 +2299,6 @@ function createProfile(name, age) {
     return null;
   }
   
-  // Check for duplicate names
   const existingProfile = AppState.profiles.find(p => 
     p.name.toLowerCase() === name.toLowerCase()
   );
@@ -2508,7 +2324,6 @@ function createProfile(name, age) {
   populateProfileSelector();
   updateProfileList();
   
-  // Clear form
   const nameInput = Utils.safeGetElement('profileName');
   const ageInput = Utils.safeGetElement('profileAge');
   if (nameInput) nameInput.value = '';
@@ -2546,6 +2361,7 @@ function switchProfile(profileId) {
     AppState.currentProfile = null;
     updateRewardDisplay(0);
     ThemeManager.applyTheme(AppState.settings.theme || 'light');
+    clearAllCharts();
     Utils.announceToScreenReader('No profile selected');
     return;
   }
@@ -2564,12 +2380,13 @@ function switchProfile(profileId) {
   if (profile.tasks && profile.tasks.length > 0) {
     updateTaskDisplay(profile.tasks);
   } else {
-    // Clear task display if no tasks
     const taskList = Utils.safeGetElement('taskList');
     if (taskList) {
       taskList.innerHTML = '<p>No tasks yet. Add your first task above!</p>';
     }
   }
+  
+  updateCharts();
   
   AppState.saveData();
   showSuccessMessage(`Switched to ${profile.name}'s profile`);
@@ -2638,6 +2455,7 @@ function deleteProfile(profileId) {
       const selector = Utils.safeGetElement('currentProfile');
       if (selector) selector.value = '';
       updateRewardDisplay(0);
+      clearAllCharts();
     }
     
     populateProfileSelector();
@@ -2665,13 +2483,15 @@ function createWelcomeProfile() {
   const profile = createProfile(name, age);
   if (profile) {
     AppState.currentProfile = profile.id;
+    
     const welcomePanel = Utils.safeGetElement('welcomePanel');
     if (welcomePanel) welcomePanel.style.display = 'none';
+    
+    showParentProfileSetup();
+    
     populateProfileSelector();
     switchProfile(profile.id);
     AppState.saveData();
-    showSuccessMessage(`Welcome ${name}! Your profile is ready.`);
-    Utils.announceToScreenReader(`Welcome ${name}! Your profile is ready.`);
   }
 }
 
@@ -2716,18 +2536,15 @@ function addTask() {
   updateTaskDisplay(profile.tasks);
   AppState.saveData();
   
-  // Clear form
   taskInput.value = '';
   if (taskDeadline) taskDeadline.value = '';
   
   showSuccessMessage(`Task added: ${task.text}`);
   
-  // Enhanced voice feedback with better timing
   speak(`Task added: ${task.text}`, { context: 'success' });
   
   Utils.announceToScreenReader(`Task added: ${task.text}`);
   
-  // Focus management
   taskInput.focus();
 }
 
@@ -2831,7 +2648,6 @@ function updateVisualView(tasks, container) {
   
   container.innerHTML = '';
   
-  // Add task creation card
   const addCard = document.createElement('div');
   addCard.className = 'task-card add-task-card';
   addCard.setAttribute('role', 'button');
@@ -2918,7 +2734,6 @@ function updateVisualView(tasks, container) {
 function getTaskIcon(taskText, category) {
   const text = taskText.toLowerCase();
   
-  // Text-based icon mapping
   if (text.includes('teeth') || text.includes('brush')) return '🦷';
   if (text.includes('shower') || text.includes('bath')) return '🚿';
   if (text.includes('homework') || text.includes('math') || text.includes('reading')) return '📚';
@@ -2928,7 +2743,6 @@ function getTaskIcon(taskText, category) {
   if (text.includes('walk') || text.includes('run') || text.includes('exercise')) return '🏃';
   if (text.includes('play') || text.includes('game')) return '🎮';
   
-  // Category-based icon mapping
   switch (category) {
     case 'Homework': return '📝';
     case 'Chores': return '🏠';
@@ -3002,12 +2816,10 @@ function completeTask(id) {
     showCelebration('⭐');
     showSuccessMessage(`Task completed! +${AppState.settings.taskPoints} points`);
     
-    // Enhanced voice feedback with better timing
     speakTaskCompletion(task.text);
     
     Utils.announceToScreenReader(`Task completed! You earned ${AppState.settings.taskPoints} points`);
     
-    // Update charts if visible
     updateCharts();
   }
 }
@@ -3065,12 +2877,10 @@ function markBehavior(behavior) {
   showCelebration('🌟');
   showSuccessMessage(`Great ${behavior.toLowerCase()} behavior! +${AppState.settings.behaviorPoints} points`);
   
-  // Enhanced voice feedback with better timing
   speakBehaviorEncouragement(behavior);
   
   Utils.announceToScreenReader(`Great ${behavior.toLowerCase()} behavior! You earned ${AppState.settings.behaviorPoints} points`);
   
-  // Update charts if visible
   updateCharts();
 }
 
@@ -3115,7 +2925,6 @@ function updateBehaviorDisplay(behaviors) {
     behaviorLog.appendChild(behaviorDiv);
   });
   
-  // Update progress bar based on today's behaviors
   const today = new Date().toDateString();
   const todayBehaviors = behaviors.filter(b => {
     return new Date(b.time).toDateString() === today;
@@ -3130,13 +2939,12 @@ function updateBehaviorProgress(count) {
   const progressContainer = progressBar?.parentElement;
   
   if (progressBar && progressText) {
-    const maxBehaviors = 10; // Goal for daily behaviors
+    const maxBehaviors = 10;
     const percentage = Math.min((count / maxBehaviors) * 100, 100);
     
     progressBar.style.width = percentage + '%';
     progressText.textContent = `${count} positive behavior${count !== 1 ? 's' : ''} today!`;
     
-    // Update ARIA attributes for accessibility
     if (progressContainer) {
       progressContainer.setAttribute('aria-valuenow', count.toString());
       progressContainer.setAttribute('aria-valuemax', maxBehaviors.toString());
@@ -3165,7 +2973,6 @@ function updateRewardDisplay(points) {
 // ============================================================================
 
 function showAITab(tabName) {
-  // Update tab states
   document.querySelectorAll('.ai-tab-content').forEach(content => {
     content.classList.remove('active');
   });
@@ -3186,7 +2993,6 @@ function showAITab(tabName) {
     clickedTab.setAttribute('aria-selected', 'true');
   }
   
-  // Load content based on tab
   switch(tabName) {
     case 'suggestions':
       showAISuggestions();
@@ -3287,7 +3093,6 @@ function showAISuggestions() {
 function generateSmartSuggestions(currentHour, profile) {
   const suggestions = [];
   
-  // Time-based suggestions
   if (currentHour >= 15 && currentHour <= 18) {
     suggestions.push({
       text: 'Review homework',
@@ -3318,7 +3123,6 @@ function generateSmartSuggestions(currentHour, profile) {
     });
   }
   
-  // Profile-based suggestions
   if (profile && profile.tasks) {
     const incompleteTasks = profile.tasks.filter(t => !t.completed);
     if (incompleteTasks.length > 5) {
@@ -3332,7 +3136,6 @@ function generateSmartSuggestions(currentHour, profile) {
     }
   }
   
-  // General wellness suggestions
   suggestions.push({
     text: 'Drink a glass of water',
     category: 'Personal',
@@ -3349,7 +3152,6 @@ function generateSmartSuggestions(currentHour, profile) {
     icon: '🧘'
   });
   
-  // Limit suggestions to avoid overwhelming
   return suggestions.slice(0, 3);
 }
 
@@ -3467,7 +3269,6 @@ function addAISuggestedTask(index) {
   speakSuccess(`AI has added a new task: ${suggestion.text}`);
   Utils.announceToScreenReader(`AI suggested task added: ${suggestion.text}`);
   
-  // Refresh suggestions after a delay
   setTimeout(showAISuggestions, 1000);
 }
 
@@ -3500,7 +3301,6 @@ function toggleAISettings() {
 }
 
 function updateAISetting(setting, value) {
-  // Store AI settings in localStorage
   try {
     let aiSettings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
     aiSettings[setting] = value;
@@ -3531,14 +3331,11 @@ function resetAIData() {
 function playSound(soundFile, isAmbient = false) {
   console.log('Playing sound:', soundFile, 'Ambient:', isAmbient);
   
-  // Always stop all sounds first
   AudioManager.stopAllSounds();
   
   if (isAmbient) {
-    // Create new audio element for the mp3 file
     const audio = new Audio();
     
-    // Store reference IMMEDIATELY, before loading
     AudioManager.currentAmbient = audio;
     AudioManager.trackAudioSource(audio);
     
@@ -3546,12 +3343,10 @@ function playSound(soundFile, isAmbient = false) {
     audio.loop = true;
     audio.volume = 0.7;
     
-    // Add error handling
     audio.addEventListener('error', (e) => {
       console.error('Audio error:', e);
       console.error('Failed to load:', soundFile);
       
-      // Fallback to synthetic sound
       createSyntheticFallback(soundFile);
     });
     
@@ -3559,7 +3354,6 @@ function playSound(soundFile, isAmbient = false) {
       console.log('Audio loaded successfully:', soundFile);
     });
     
-    // Actually play the audio
     audio.play()
       .then(() => {
         console.log('Audio playing successfully');
@@ -3570,7 +3364,6 @@ function playSound(soundFile, isAmbient = false) {
         createSyntheticFallback(soundFile);
       });
   } else {
-    // Handle non-ambient sounds (one-time plays)
     playOneTimeSound(soundFile);
   }
 }
@@ -3669,7 +3462,6 @@ function playWhiteNoise() {
     
     whiteNoise.start();
     
-    // Store reference for stopping
     AudioManager.currentAmbientSound = {
       stop: () => {
         try {
@@ -3710,7 +3502,7 @@ function playBrownNoise() {
       const white = Math.random() * 2 - 1;
       output[i] = (lastOut + (0.02 * white)) / 1.02;
       lastOut = output[i];
-      output[i] *= 3.5; // Compensate for volume
+      output[i] *= 3.5;
     }
     
     const brownNoise = context.createBufferSource();
@@ -3724,7 +3516,6 @@ function playBrownNoise() {
     
     brownNoise.start();
     
-    // Store reference for stopping
     AudioManager.currentAmbientSound = {
       stop: () => {
         try {
@@ -3777,11 +3568,10 @@ function createHeartbeatLoop() {
     scheduleBeat: function() {
       if (!isPlaying) return;
       
-      // Create double beat (lub-dub)
-      this.createBeat(nextBeatTime, 100); // lub
-      this.createBeat(nextBeatTime + 0.15, 80); // dub
+      this.createBeat(nextBeatTime, 100);
+      this.createBeat(nextBeatTime + 0.15, 80);
       
-      nextBeatTime += 0.8; // 75 BPM
+      nextBeatTime += 0.8;
       setTimeout(() => this.scheduleBeat(), 700);
     },
     
@@ -3838,7 +3628,7 @@ function createAmbientLoop(frequencies, waveType) {
           oscillator.connect(gainNode);
           gainNode.connect(context.destination);
           
-          oscillator.frequency.value = freq + (Math.random() * 20 - 10); // Add slight variation
+          oscillator.frequency.value = freq + (Math.random() * 20 - 10);
           oscillator.type = waveType;
           
           gainNode.gain.setValueAtTime(0, context.currentTime);
@@ -3881,24 +3671,19 @@ function createAmbientLoop(frequencies, waveType) {
   };
 }
 
-// Enhanced stop function with comprehensive cleanup
 function stopAllSounds() {
   console.log('Global stopAllSounds() called');
   
-  // Stop AudioManager sounds
   AudioManager.stopAllSounds();
   
-  // Stop any breathing exercises
   if (typeof stopBreathingExercise === 'function') {
     stopBreathingExercise();
   }
   
-  // Stop all calming tool exercises
   if (typeof stopAllExercises === 'function') {
     stopAllExercises();
   }
   
-  // Clear any global intervals or timeouts that might be playing sounds
   try {
     if (window.breathingInterval) {
       clearInterval(window.breathingInterval);
@@ -3918,7 +3703,6 @@ function stopAllSounds() {
     console.warn('Error clearing intervals:', error);
   }
   
-  // Hide any exercise containers
   try {
     document.querySelectorAll('.exercise-container').forEach(container => {
       container.remove();
@@ -3932,7 +3716,6 @@ function stopAllSounds() {
     console.warn('Error removing exercise containers:', error);
   }
   
-  // Clear voice queue
   VoiceSystem.cancelAll();
   
   showSuccessMessage('All sounds and exercises stopped');
@@ -3943,9 +3726,6 @@ function stopAllSounds() {
 // ENHANCED CALMING TOOLS FUNCTIONS WITH IMPROVED VOICE TIMING
 // ============================================================================
 
-
-
-// Progressive Muscle Relaxation
 function startProgressiveMuscleRelaxation() {
   if (activeExercise) {
     stopAllExercises();
@@ -4023,7 +3803,6 @@ function startProgressiveMuscleRelaxation() {
   showSuccessMessage('Starting muscle relaxation exercise');
 }
 
-// 5-4-3-2-1 Grounding Technique
 function start54321Grounding() {
   if (activeExercise) {
     stopAllExercises();
@@ -4090,7 +3869,6 @@ function start54321Grounding() {
   showSuccessMessage('Starting 5-4-3-2-1 grounding exercise');
 }
 
-// Desk Stretches
 function startDeskStretches() {
   if (activeExercise) {
     stopAllExercises();
@@ -4157,7 +3935,6 @@ function startDeskStretches() {
   showSuccessMessage('Starting desk stretches');
 }
 
-// Body Scan Meditation
 function startBodyScan() {
   if (activeExercise) {
     stopAllExercises();
@@ -4202,7 +3979,6 @@ function startBodyScan() {
   showSuccessMessage('Starting body scan meditation');
 }
 
-// Guided Visualization
 function startGuidedVisualization() {
   if (activeExercise) {
     stopAllExercises();
@@ -4245,7 +4021,6 @@ function startGuidedVisualization() {
   showSuccessMessage('Starting peaceful place visualization');
 }
 
-// Positive Affirmations
 function showPositiveAffirmations() {
   if (activeExercise) {
     stopAllExercises();
@@ -4300,7 +4075,6 @@ function showPositiveAffirmations() {
   showSuccessMessage('Showing positive affirmations');
 }
 
-// Additional exercises (focus dot, color breathing, counting)
 function startFocusDot() {
   if (activeExercise) {
     stopAllExercises();
@@ -4456,7 +4230,7 @@ function startCountingExercise() {
     const numberEl = document.getElementById('countingNumber');
     if (numberEl) {
       numberEl.textContent = currentNumber;
-      if (currentNumber % 15 === 1) { // Speak every 5th number
+      if (currentNumber % 15 === 1) {
         speakExerciseInstruction(currentNumber.toString());
       }
     }
@@ -4469,9 +4243,7 @@ function startCountingExercise() {
   showSuccessMessage('Starting counting exercise');
 }
 
-// Utility functions for exercises
 function createExerciseContainer(id, title) {
-  // Remove any existing exercise container
   const existing = document.getElementById(id + '-container');
   if (existing) {
     existing.remove();
@@ -4534,11 +4306,9 @@ function stopAllExercises() {
     exerciseTimeout = null;
   }
   
-  // Remove any exercise containers
   const containers = document.querySelectorAll('.exercise-container');
   containers.forEach(container => container.remove());
   
-  // Clean up global functions
   if (window.nextAffirmation) {
     delete window.nextAffirmation;
   }
@@ -4551,8 +4321,6 @@ function stopAllExercises() {
 // ============================================================================
 // BREATHING EXERCISE WITH ENHANCED VOICE TIMING
 // ============================================================================
-
-
 
 function breathingExercise() {
   const container = Utils.safeGetElement('breathingContainer');
@@ -4573,7 +4341,7 @@ function breathingExercise() {
     const textEl = Utils.safeGetElement('breathingText');
     
     switch(breathingPhase) {
-      case 0: // Inhale
+      case 0:
         if (circle) circle.classList.add('inhale');
         Utils.safeSetText('breathingText', `Breathe In... ${4 - breathingCount}`);
         if (breathingCount === 0) {
@@ -4584,7 +4352,7 @@ function breathingExercise() {
           breathingCount = 0;
         }
         break;
-      case 1: // Hold
+      case 1:
         Utils.safeSetText('breathingText', `Hold... ${2 - breathingCount}`);
         if (breathingCount === 0) {
           VoiceSystem.speakBreathingCue('hold_in', 2 - breathingCount);
@@ -4594,7 +4362,7 @@ function breathingExercise() {
           breathingCount = 0;
         }
         break;
-      case 2: // Exhale
+      case 2:
         if (circle) circle.classList.remove('inhale');
         Utils.safeSetText('breathingText', `Breathe Out... ${4 - breathingCount}`);
         if (breathingCount === 0) {
@@ -4605,7 +4373,7 @@ function breathingExercise() {
           breathingCount = 0;
         }
         break;
-      case 3: // Hold
+      case 3:
         Utils.safeSetText('breathingText', `Hold... ${2 - breathingCount}`);
         if (breathingCount === 0) {
           VoiceSystem.speakBreathingCue('hold_out', 2 - breathingCount);
@@ -4659,7 +4427,6 @@ function createBreathingContainer() {
   
   document.body.appendChild(container);
   
-  // Add CSS animation class
   const style = document.createElement('style');
   style.textContent = `
     #breathingCircle.inhale {
@@ -4683,6 +4450,529 @@ function stopBreathingExercise() {
   
   showSuccessMessage('Breathing exercise stopped');
   Utils.announceToScreenReader('Breathing exercise stopped');
+}
+
+// ============================================================================
+// SOS CRISIS MODE SYSTEM
+// ============================================================================
+
+function activateSOSMode() {
+  console.log('SOS Mode activated');
+  sosActive = true;
+  sosStartTime = Date.now();
+  
+  const sosOverlay = document.getElementById('sosMode');
+  if (sosOverlay) {
+    sosOverlay.style.display = 'flex';
+    
+    stopAllSounds();
+    stopAllExercises();
+    
+    logMeltdownEvent('sos_activated');
+    
+    speak("You're safe. I'm here to help you feel better.", {
+      context: 'sos',
+      priority: 'high',
+      rate: 0.8,
+      volume: 0.8
+    });
+    
+    Utils.announceToScreenReader('Emergency calming mode activated');
+  }
+}
+
+function exitSOSMode() {
+  const duration = sosStartTime ? Math.round((Date.now() - sosStartTime) / 1000) : 0;
+  
+  logMeltdownEvent('sos_resolved', {
+    duration: duration,
+    activityUsed: sosActivity
+  });
+  
+  const sosOverlay = document.getElementById('sosMode');
+  if (sosOverlay) {
+    sosOverlay.style.display = 'none';
+  }
+  
+  const activityContainer = document.getElementById('sosActivity');
+  if (activityContainer) {
+    activityContainer.innerHTML = '';
+    activityContainer.classList.remove('active');
+  }
+  
+  sosActive = false;
+  sosStartTime = null;
+  sosActivity = null;
+  
+  stopAllSounds();
+  if (sosBreathingInterval) {
+    clearInterval(sosBreathingInterval);
+    sosBreathingInterval = null;
+  }
+  
+  speak("Great job! You did so well calming down.", {
+    context: 'success',
+    priority: 'high'
+  });
+  
+  showSuccessMessage('You did an amazing job calming down!');
+  Utils.announceToScreenReader('Calming mode ended successfully');
+}
+
+function startSOSBreathing() {
+  sosActivity = 'breathing';
+  const container = document.getElementById('sosActivity');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="sos-breathing-circle"></div>
+    <div class="sos-breathing-text" id="sosBreathText" aria-live="assertive">Breathe In...</div>
+  `;
+  container.classList.add('active');
+  
+  let phase = 0;
+  let count = 0;
+  
+  function updateBreathing() {
+    const text = document.getElementById('sosBreathText');
+    if (!text) return;
+    
+    if (phase === 0) {
+      text.textContent = 'Breathe In...';
+      text.style.color = '#4CAF50';
+      if (count === 0) {
+        VoiceSystem.speakBreathingCue('inhale', '');
+      }
+      count++;
+      if (count >= 4) {
+        phase = 1;
+        count = 0;
+      }
+    } else {
+      text.textContent = 'Breathe Out...';
+      text.style.color = '#2196F3';
+      if (count === 0) {
+        VoiceSystem.speakBreathingCue('exhale', '');
+      }
+      count++;
+      if (count >= 4) {
+        phase = 0;
+        count = 0;
+      }
+    }
+  }
+  
+  updateBreathing();
+  if (sosBreathingInterval) clearInterval(sosBreathingInterval);
+  sosBreathingInterval = setInterval(updateBreathing, 1000);
+  
+  speak("Breathe with me. In and out. Nice and slow.", {
+    context: 'breathing',
+    priority: 'high',
+    rate: 0.7
+  });
+}
+
+function startSOSSound() {
+  sosActivity = 'sound';
+  const container = document.getElementById('sosActivity');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div style="text-align: center;">
+      <div style="font-size: 5rem; margin: 2rem 0;">🎵</div>
+      <p style="font-size: 1.5rem; color: #333;">Playing calming sounds...</p>
+    </div>
+  `;
+  container.classList.add('active');
+  
+  playBrownNoise();
+  
+  speak("Listen to the calming sound. Let it help you relax.", {
+    context: 'sos',
+    priority: 'high',
+    rate: 0.7
+  });
+}
+
+function startSOSMovement() {
+  sosActivity = 'movement';
+  const container = document.getElementById('sosActivity');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <h3 style="color: #333; margin-bottom: 1.5rem;">Try These Movements:</h3>
+    <div class="movement-cards">
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🤲</div>
+        <div>Push your hands together hard for 10 seconds</div>
+      </div>
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧱</div>
+        <div>Push against a wall as hard as you can</div>
+      </div>
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🪑</div>
+        <div>Push down on your chair with both hands</div>
+      </div>
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🦶</div>
+        <div>Stomp your feet 10 times</div>
+      </div>
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🫂</div>
+        <div>Give yourself a tight hug</div>
+      </div>
+      <div class="movement-card">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧊</div>
+        <div>Hold something cold (ice, cold water)</div>
+      </div>
+    </div>
+  `;
+  container.classList.add('active');
+  
+  speak("Try some of these movements. They help your body feel better.", {
+    context: 'sos',
+    priority: 'high',
+    rate: 0.8
+  });
+}
+
+function callForHelp() {
+  sosActivity = 'help_called';
+  const container = document.getElementById('sosActivity');
+  if (!container) return;
+  
+  const settings = AppState.parentProfile || { phone: AppState.settings.emergencyContact };
+  const phoneNumber = settings.phone;
+  
+  if (!phoneNumber || phoneNumber.trim() === '') {
+    container.innerHTML = `
+      <div class="sos-help-message">
+        <h3>📱 Alert Parent</h3>
+        <p style="font-size: 1.2rem; margin: 1rem 0;">
+          Ask a parent to set up their phone number in Parent Login → Settings
+        </p>
+        <p style="margin-top: 2rem;">
+          For now, you can:
+        </p>
+        <button onclick="goFindAdult()" style="margin: 1rem; padding: 1rem 2rem; font-size: 1.1rem; background: var(--accent-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
+          Go Find a Grown-Up 🏃
+        </button>
+      </div>
+    `;
+    return;
+  }
+  
+  const currentProfile = AppState.currentProfile ? 
+    AppState.profiles.find(p => p.id === AppState.currentProfile) : null;
+  const childName = currentProfile ? currentProfile.name : 'Your child';
+  
+  const message = encodeURIComponent(`🆘 ${childName} needs help! They pressed the SOS button on their Helper Dashboard.`);
+  
+  const cleanNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+  
+  container.innerHTML = `
+    <div class="sos-help-message">
+      <h3>📱 Alerting Your Grown-Up</h3>
+      <p style="font-size: 1.2rem; margin: 1rem 0;">
+        Tap the button below to send a message
+      </p>
+      <a href="sms:${cleanNumber}?body=${message}" class="sos-sms-button" style="display: inline-block; padding: 1rem 2rem; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin: 1rem 0;">
+        📱 Send Help Message
+      </a>
+      <p style="margin-top: 2rem; font-size: 0.9rem; color: #666;">
+        This will open your messaging app. Tap send when it opens.
+      </p>
+    </div>
+  `;
+  container.classList.add('active');
+  
+  logMeltdownEvent('help_requested');
+  
+  const tone = AudioManager.createTone(659, 0.3, 'sine');
+  if (tone) tone.play();
+  
+  speak("Help is on the way. You're doing great asking for help.", {
+    context: 'success',
+    priority: 'high'
+  });
+  
+  showSuccessMessage('Parent/Caregiver notified!');
+}
+
+function goFindAdult() {
+  const sosActivity = document.getElementById('sosActivity');
+  if (!sosActivity) return;
+  
+  sosActivity.innerHTML = `
+    <div class="sos-help-message">
+      <h3>🏃 Go Find Your Grown-Up</h3>
+      <p style="font-size: 1.3rem; margin: 2rem 0;">
+        Walk to where your parent or caregiver is and let them know you need help.
+      </p>
+      <p style="font-size: 1.1rem;">
+        Take some deep breaths while you walk. 🫁
+      </p>
+    </div>
+  `;
+}
+
+// ============================================================================
+// MELTDOWN TRACKING SYSTEM
+// ============================================================================
+
+function logMeltdownEvent(eventType, details = {}) {
+  if (!AppState.currentProfile) return;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile) return;
+  
+  if (!profile.meltdownLog) {
+    profile.meltdownLog = [];
+  }
+  
+  const event = {
+    id: Date.now() + Math.random(),
+    type: eventType,
+    timestamp: new Date().toISOString(),
+    timeOfDay: new Date().getHours(),
+    dayOfWeek: new Date().getDay(),
+    ...details
+  };
+  
+  profile.meltdownLog.push(event);
+  
+  if (profile.meltdownLog.length > 100) {
+    profile.meltdownLog = profile.meltdownLog.slice(-100);
+  }
+  
+  AppState.saveData();
+  console.log('Meltdown event logged:', event);
+}
+
+function getMeltdownPatterns() {
+  if (!AppState.currentProfile) return null;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile || !profile.meltdownLog) return null;
+  
+  const log = profile.meltdownLog.filter(e => e.type === 'sos_activated');
+  
+  if (log.length < 3) {
+    return { message: 'Not enough data yet to identify patterns' };
+  }
+  
+  const hourCounts = {};
+  log.forEach(event => {
+    const hour = event.timeOfDay;
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+  });
+  
+  const mostCommonHour = Object.keys(hourCounts).reduce((a, b) => 
+    hourCounts[a] > hourCounts[b] ? a : b
+  );
+  
+  const dayCounts = {};
+  log.forEach(event => {
+    const day = event.dayOfWeek;
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+  
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const mostCommonDay = days[Object.keys(dayCounts).reduce((a, b) => 
+    dayCounts[a] > dayCounts[b] ? a : b
+  )];
+  
+  const resolvedEvents = profile.meltdownLog.filter(e => 
+    e.type === 'sos_resolved' && e.duration
+  );
+  const avgDuration = resolvedEvents.length > 0 
+    ? Math.round(resolvedEvents.reduce((sum, e) => sum + e.duration, 0) / resolvedEvents.length)
+    : null;
+  
+  const strategyCounts = {};
+  resolvedEvents.forEach(event => {
+    if (event.activityUsed) {
+      strategyCounts[event.activityUsed] = (strategyCounts[event.activityUsed] || 0) + 1;
+    }
+  });
+  
+  const mostEffective = Object.keys(strategyCounts).length > 0
+    ? Object.keys(strategyCounts).reduce((a, b) => 
+        strategyCounts[a] > strategyCounts[b] ? a : b
+      )
+    : null;
+  
+  return {
+    totalEvents: log.length,
+    mostCommonHour: parseInt(mostCommonHour),
+    mostCommonDay: mostCommonDay,
+    averageDuration: avgDuration,
+    mostEffectiveStrategy: mostEffective,
+    last7Days: log.filter(e => {
+      const daysDiff = (Date.now() - new Date(e.timestamp)) / (1000 * 60 * 60 * 24);
+      return daysDiff <= 7;
+    }).length
+  };
+}
+
+function formatHour(hour) {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+  return `${displayHour}:00 ${period}`;
+}
+
+function viewDetailedLog() {
+  if (!AppState.currentProfile) return;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile || !profile.meltdownLog) return;
+  
+  const log = profile.meltdownLog.filter(e => e.type === 'sos_activated')
+    .slice(-20)
+    .reverse();
+  
+  let html = `
+    <div class="modal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; overflow-y: auto;">
+      <div class="modal-content" style="max-width: 800px; margin: 2rem auto; background: var(--bg-primary); padding: 2rem; border-radius: 12px; max-height: 90vh; overflow-y: auto;">
+        <h3>Regulation Event Log for ${profile.name}</h3>
+        <div style="margin: 1rem 0;">
+  `;
+  
+  if (log.length === 0) {
+    html += '<p>No SOS events recorded yet.</p>';
+  } else {
+    log.forEach(event => {
+      const date = new Date(event.timestamp);
+      const resolved = profile.meltdownLog.find(e => 
+        e.type === 'sos_resolved' && 
+        Math.abs(new Date(e.timestamp) - date) < 600000
+      );
+      
+      html += `
+        <div style="margin: 1rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid var(--accent-primary);">
+          <strong>${date.toLocaleDateString()} ${date.toLocaleTimeString()}</strong><br>
+          Time of day: ${formatHour(event.timeOfDay)}<br>
+          ${resolved ? `Duration: ${resolved.duration} seconds<br>Strategy used: ${resolved.activityUsed || 'None'}` : 'Not resolved in log'}
+        </div>
+      `;
+    });
+  }
+  
+  html += `
+        </div>
+        <button onclick="this.closest('.modal').remove()" style="background: var(--accent-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+          Close
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function addWarningSigns() {
+  if (!AppState.currentProfile) return;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile) return;
+  
+  let html = `
+    <div class="modal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001;">
+      <div class="modal-content" style="max-width: 600px; margin: 2rem auto; background: var(--bg-primary); padding: 2rem; border-radius: 12px;">
+        <h3>Warning Signs for ${profile.name}</h3>
+        <p style="color: var(--text-secondary);">What behaviors or signs happen before ${profile.name} needs help?</p>
+        
+        <div style="margin: 1rem 0;">
+          <input type="text" id="newWarningSign" placeholder="e.g., Gets very quiet, fidgets more, says 'I can't'" 
+                 style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-color); border-radius: 5px; margin-bottom: 0.5rem;">
+          <button onclick="saveWarningSign()" style="background: var(--success); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+            Add Warning Sign
+          </button>
+        </div>
+        
+        <h4>Current Warning Signs:</h4>
+        <ul class="warning-signs-list" id="warningSignsList" style="list-style: none; padding: 0;">
+          ${profile.warningSigns ? profile.warningSigns.map((sign, i) => `
+            <li style="padding: 0.5rem; margin: 0.5rem 0; background: var(--bg-secondary); border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+              <span>${sign}</span>
+              <button onclick="removeWarningSign(${i})" style="background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
+                Remove
+              </button>
+            </li>
+          `).join('') : '<li>No warning signs added yet</li>'}
+        </ul>
+        
+        <button onclick="this.closest('.modal').remove()" style="background: var(--accent-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
+          Close
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function saveWarningSign() {
+  if (!AppState.currentProfile) return;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile) return;
+  
+  const input = document.getElementById('newWarningSign');
+  if (!input || !input.value.trim()) return;
+  
+  if (!profile.warningSigns) {
+    profile.warningSigns = [];
+  }
+  
+  profile.warningSigns.push(input.value.trim());
+  AppState.saveData();
+  
+  input.value = '';
+  
+  const list = document.getElementById('warningSignsList');
+  if (list) {
+    list.innerHTML = profile.warningSigns.map((sign, i) => `
+      <li style="padding: 0.5rem; margin: 0.5rem 0; background: var(--bg-secondary); border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+        <span>${sign}</span>
+        <button onclick="removeWarningSign(${i})" style="background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
+          Remove
+        </button>
+      </li>
+    `).join('');
+  }
+  
+  showSuccessMessage('Warning sign added');
+}
+
+function removeWarningSign(index) {
+  if (!AppState.currentProfile) return;
+  
+  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+  if (!profile || !profile.warningSigns) return;
+  
+  profile.warningSigns.splice(index, 1);
+  AppState.saveData();
+  
+  const list = document.getElementById('warningSignsList');
+  if (list) {
+    if (profile.warningSigns.length === 0) {
+      list.innerHTML = '<li>No warning signs added yet</li>';
+    } else {
+      list.innerHTML = profile.warningSigns.map((sign, i) => `
+        <li style="padding: 0.5rem; margin: 0.5rem 0; background: var(--bg-secondary); border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+          <span>${sign}</span>
+          <button onclick="removeWarningSign(${i})" style="background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
+            Remove
+          </button>
+        </li>
+      `).join('');
+    }
+  }
+  
+  showSuccessMessage('Warning sign removed');
 }
 
 // ============================================================================
@@ -4741,7 +5031,6 @@ function openParentDashboard() {
     loadParentSettings();
     updateChildStats();
     
-    // Focus management
     const firstButton = modal.querySelector('button');
     if (firstButton) {
       setTimeout(() => firstButton.focus(), 100);
@@ -4760,14 +5049,19 @@ function closeParentDashboard() {
 function loadParentSettings() {
   const taskPointsInput = Utils.safeGetElement('taskPoints');
   const behaviorPointsInput = Utils.safeGetElement('behaviorPoints');
+  const emergencyContact = Utils.safeGetElement('emergencyContact');
   
   if (taskPointsInput) taskPointsInput.value = AppState.settings.taskPoints;
   if (behaviorPointsInput) behaviorPointsInput.value = AppState.settings.behaviorPoints;
+  if (emergencyContact) {
+    emergencyContact.value = AppState.parentProfile?.phone || AppState.settings.emergencyContact || '';
+  }
 }
 
 function saveParentSettings() {
   const taskPointsInput = Utils.safeGetElement('taskPoints');
   const behaviorPointsInput = Utils.safeGetElement('behaviorPoints');
+  const emergencyContact = Utils.safeGetElement('emergencyContact');
   
   if (taskPointsInput) {
     const value = parseInt(taskPointsInput.value);
@@ -4780,6 +5074,13 @@ function saveParentSettings() {
     const value = parseInt(behaviorPointsInput.value);
     if (value >= 1 && value <= 10) {
       AppState.settings.behaviorPoints = value;
+    }
+  }
+  
+  if (emergencyContact) {
+    AppState.settings.emergencyContact = emergencyContact.value;
+    if (AppState.parentProfile) {
+      AppState.parentProfile.phone = emergencyContact.value;
     }
   }
   
@@ -4804,7 +5105,9 @@ function updateChildStats() {
   const totalBehaviors = profile.behaviors ? profile.behaviors.length : 0;
   const totalTasks = profile.tasks ? profile.tasks.length : 0;
   
-  statsDiv.innerHTML = `
+  const patterns = getMeltdownPatterns();
+  
+  let html = `
     <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
       <h4 style="margin: 0 0 1rem 0; color: var(--accent-primary);">${profile.name} (${profile.age} years old)</h4>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
@@ -4823,6 +5126,40 @@ function updateChildStats() {
       </div>
     </div>
   `;
+  
+  if (patterns) {
+    html += `
+      <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+        <h4 style="color: #ff6b6b; margin: 0 0 0.5rem 0;">Regulation Patterns</h4>
+    `;
+    
+    if (patterns.message) {
+      html += `<p style="color: var(--text-secondary);">${patterns.message}</p>`;
+    } else {
+      html += `
+        <div style="font-size: 0.9rem; line-height: 1.6;">
+          <strong>Total SOS activations:</strong> ${patterns.totalEvents}<br>
+          <strong>Last 7 days:</strong> ${patterns.last7Days} events<br>
+          ${patterns.mostCommonHour ? `<strong>Most common time:</strong> ${formatHour(patterns.mostCommonHour)}<br>` : ''}
+          ${patterns.mostCommonDay ? `<strong>Most common day:</strong> ${patterns.mostCommonDay}<br>` : ''}
+          ${patterns.averageDuration ? `<strong>Average calming time:</strong> ${patterns.averageDuration} seconds<br>` : ''}
+          ${patterns.mostEffectiveStrategy ? `<strong>Most used strategy:</strong> ${patterns.mostEffectiveStrategy}` : ''}
+        </div>
+        <div style="margin-top: 1rem;">
+          <button onclick="viewDetailedLog()" style="background: #2196F3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; margin-right: 0.5rem;">
+            View Detailed Log
+          </button>
+          <button onclick="addWarningSigns()" style="background: #ff9800; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">
+            Add Warning Signs
+          </button>
+        </div>
+      `;
+    }
+    
+    html += `</div>`;
+  }
+  
+  statsDiv.innerHTML = html;
 }
 
 function openChangePinModal() {
@@ -4831,7 +5168,6 @@ function openChangePinModal() {
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
     
-    // Focus management
     const currentPinInput = Utils.safeGetElement('currentPin');
     if (currentPinInput) {
       setTimeout(() => currentPinInput.focus(), 100);
@@ -4895,12 +5231,10 @@ function exportData() {
     link.href = URL.createObjectURL(dataBlob);
     link.download = 'adhd-helper-data-' + new Date().toISOString().split('T')[0] + '.json';
     
-    // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Cleanup
     setTimeout(() => URL.revokeObjectURL(link.href), 100);
     
     showSuccessMessage('Data exported successfully');
@@ -4943,23 +5277,19 @@ function resetChildStats() {
   if (confirm(confirmMessage)) {
     if (confirm(`Last chance! Reset all progress for ${profile.name}?`)) {
       try {
-        // Reset all stats but keep profile info
         profile.tasks = [];
         profile.behaviors = [];
         profile.rewardPoints = 0;
-        profile.routines = profile.routines || []; // Keep routines if they exist
+        profile.routines = profile.routines || [];
         
-        // Save the changes
         AppState.saveData();
         
-        // Update the UI immediately
         updateTaskDisplay([]);
         updateBehaviorDisplay([]);
         updateRewardDisplay(0);
         updateChildStats();
         clearAllCharts();
         
-        // Show success message
         showSuccessMessage(`${profile.name}'s stats have been reset to zero`);
         Utils.announceToScreenReader(`All stats reset for ${profile.name}. Fresh start!`);
         
@@ -4974,6 +5304,129 @@ function resetChildStats() {
 }
 
 // ============================================================================
+// PARENT PROFILE FUNCTIONS
+// ============================================================================
+
+function showParentProfileSetup() {
+  const panel = Utils.safeGetElement('parentProfilePanel');
+  if (panel) {
+    panel.style.display = 'flex';
+    panel.setAttribute('aria-hidden', 'false');
+    
+    const nameInput = Utils.safeGetElement('parentNameInput');
+    if (nameInput) {
+      setTimeout(() => nameInput.focus(), 100);
+    }
+  }
+}
+
+function saveParentProfile() {
+  const nameInput = Utils.safeGetElement('parentNameInput');
+  const emailInput = Utils.safeGetElement('parentEmailInput');
+  const phoneInput = Utils.safeGetElement('parentPhoneInput');
+  const relationshipInput = Utils.safeGetElement('parentRelationship');
+  const secondaryNameInput = Utils.safeGetElement('secondaryContactName');
+  const secondaryPhoneInput = Utils.safeGetElement('secondaryContactPhone');
+  
+  if (!nameInput || !phoneInput) return;
+  
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  
+  if (!name || !phone) {
+    showErrorMessage('Please enter your name and phone number');
+    return;
+  }
+  
+  const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+  if (!phoneRegex.test(phone)) {
+    showErrorMessage('Please enter a valid phone number');
+    return;
+  }
+  
+  AppState.parentProfile = {
+    name: Utils.sanitizeInput(name, 50),
+    email: emailInput ? emailInput.value.trim() : '',
+    phone: phone,
+    relationship: relationshipInput ? relationshipInput.value : 'parent',
+    secondaryContact: {
+      name: secondaryNameInput ? Utils.sanitizeInput(secondaryNameInput.value, 50) : '',
+      phone: secondaryPhoneInput ? secondaryPhoneInput.value.trim() : ''
+    },
+    dateCreated: new Date().toISOString()
+  };
+  
+  AppState.settings.emergencyContact = phone;
+  
+  AppState.saveData();
+  
+  const panel = Utils.safeGetElement('parentProfilePanel');
+  if (panel) {
+    panel.style.display = 'none';
+  }
+  
+  showSuccessMessage(`Parent profile saved for ${name}`);
+  Utils.announceToScreenReader(`Parent profile saved`);
+}
+
+function skipParentProfile() {
+  const panel = Utils.safeGetElement('parentProfilePanel');
+  if (panel) {
+    panel.style.display = 'none';
+  }
+  
+  showSuccessMessage('You can add parent information later in Parent Dashboard');
+}
+
+function loadParentProfileToForm() {
+  if (!AppState.parentProfile) return;
+  
+  const nameInput = Utils.safeGetElement('parentNameInput');
+  const emailInput = Utils.safeGetElement('parentEmailInput');
+  const phoneInput = Utils.safeGetElement('parentPhoneInput');
+  const relationshipInput = Utils.safeGetElement('parentRelationship');
+  const secondaryNameInput = Utils.safeGetElement('secondaryContactName');
+  const secondaryPhoneInput = Utils.safeGetElement('secondaryContactPhone');
+  
+  if (nameInput) nameInput.value = AppState.parentProfile.name || '';
+  if (emailInput) emailInput.value = AppState.parentProfile.email || '';
+  if (phoneInput) phoneInput.value = AppState.parentProfile.phone || '';
+  if (relationshipInput) relationshipInput.value = AppState.parentProfile.relationship || 'parent';
+  if (secondaryNameInput) secondaryNameInput.value = AppState.parentProfile.secondaryContact?.name || '';
+  if (secondaryPhoneInput) secondaryPhoneInput.value = AppState.parentProfile.secondaryContact?.phone || '';
+}
+
+function displayParentProfile() {
+  const displayDiv = Utils.safeGetElement('parentProfileDisplay');
+  if (!displayDiv) return;
+  
+  if (!AppState.parentProfile) {
+    displayDiv.innerHTML = '<p>No parent profile set up yet. <button onclick="showParentProfileSetup()">Set Up Now</button></p>';
+    return;
+  }
+  
+  const p = AppState.parentProfile;
+  displayDiv.innerHTML = `
+    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px;">
+      <p><strong>Name:</strong> ${p.name}</p>
+      <p><strong>Email:</strong> ${p.email || 'Not provided'}</p>
+      <p><strong>Phone:</strong> ${p.phone}</p>
+      <p><strong>Relationship:</strong> ${p.relationship}</p>
+      ${p.secondaryContact?.name ? `
+        <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
+        <p><strong>Secondary Contact:</strong> ${p.secondaryContact.name}</p>
+        <p><strong>Secondary Phone:</strong> ${p.secondaryContact.phone}</p>
+      ` : ''}
+    </div>
+  `;
+}
+
+function editParentProfile() {
+  loadParentProfileToForm();
+  showParentProfileSetup();
+}
+
+// ============================================================================
 // INFO PANEL FUNCTIONS
 // ============================================================================
 
@@ -4985,10 +5438,7 @@ function toggleInfoPanel() {
     panel.setAttribute('aria-hidden', isVisible ? 'true' : 'false');
     
     if (!isVisible) {
-      // Show the About tab when opening
-      showInfoTab('about', null);
-      //showResources();
-      // Focus management
+      showInfoTab('about');
       const firstTab = panel.querySelector('.info-tab');
       if (firstTab) {
         setTimeout(() => firstTab.focus(), 100);
@@ -5001,52 +5451,28 @@ function toggleInfoPanel() {
   }
 }
 
-function showInfoTab(tabName) {
-  console.log('showInfoTab called with:', tabName);
-  
-  // Hide all sections
+function showInfoTab(tabName, e) {
   const sections = document.querySelectorAll('.info-section');
-  sections.forEach(section => {
-    section.classList.remove('active');
-    section.style.display = 'none';
-  });
+  sections.forEach(section => section.classList.remove('active'));
   
-  // Remove active class from all tabs
   const tabs = document.querySelectorAll('.info-tab');
   tabs.forEach(tab => {
     tab.classList.remove('active');
     tab.setAttribute('aria-selected', 'false');
   });
   
-  // Show selected section
   const selectedSection = document.getElementById(tabName + '-info');
   if (selectedSection) {
     selectedSection.classList.add('active');
-    selectedSection.style.display = 'block';
-    console.log('Showing section:', tabName + '-info');
-  } else {
-    console.error('Section not found:', tabName + '-info');
   }
   
-  // Add active to clicked tab - find the tab button
-  const clickedTab = Array.from(tabs).find(tab => 
-    tab.getAttribute('onclick')?.includes(tabName)
-  );
-  if (clickedTab) {
-    clickedTab.classList.add('active');
-    clickedTab.setAttribute('aria-selected', 'true');
+  if (e && e.target) {
+    e.target.classList.add('active');
+    e.target.setAttribute('aria-selected', 'true');
   }
   
   Utils.announceToScreenReader(`Switched to ${tabName} information`);
 }
- 
-
-  
- 
- 
-  
- 
-
 
 function showResources() {
   const modal = Utils.safeGetElement('infoPanel');
@@ -5116,12 +5542,10 @@ function showResourcesModal() {
   content.appendChild(body);
   modal.appendChild(content);
   
-  // Close on background click
   modal.onclick = (e) => {
     if (e.target === modal) modal.remove();
   };
   
-  // Close on Escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
       modal.remove();
@@ -5228,19 +5652,19 @@ function loadAustralianResources(container) {
         html += `<div style="margin: 0.25rem 0; font-size: 0.9rem;">🌐 <a href="${resource.website}" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: none;">${resource.website}</a></div>`;
       }
       
-if (resource.phone) {
-          const phoneNumber = resource.phone.replace(/[^\d]/g, '');
-          html += `<div style="margin: 0.25rem 0; font-size: 0.9rem;">📞 <a href="tel:${phoneNumber}" style="color: var(--accent-secondary); text-decoration: none; font-weight: 600;">${resource.phone}</a></div>`;
-        }
-        
-        html += '</div>';
-      });
+      if (resource.phone) {
+        const phoneNumber = resource.phone.replace(/[^\d]/g, '');
+        html += `<div style="margin: 0.25rem 0; font-size: 0.9rem;">📞 <a href="tel:${phoneNumber}" style="color: var(--accent-secondary); text-decoration: none; font-weight: 600;">${resource.phone}</a></div>`;
+      }
       
       html += '</div>';
     });
     
-    container.innerHTML = html;
-  }
+    html += '</div>';
+  });
+  
+  container.innerHTML = html;
+}
 
 // ============================================================================
 // VOICE CONTROL FUNCTIONS
@@ -5299,8 +5723,84 @@ function toggleVoicePrompts() {
 }
 
 // ============================================================================
-// INITIALIZATION
+// EMOTION TRACKING
 // ============================================================================
+
+function selectEmotion(emotion, emoji) {
+  document.querySelectorAll('.emotion-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  event.currentTarget.classList.add('selected');
+  
+  if (AppState.currentProfile) {
+    const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
+    if (profile) {
+      if (!profile.emotions) profile.emotions = [];
+      profile.emotions.push({
+        emotion: emotion,
+        emoji: emoji,
+        timestamp: new Date().toISOString()
+      });
+      AppState.saveData();
+    }
+  }
+  
+  const feedback = document.getElementById('emotionFeedback');
+  if (feedback) {
+    feedback.innerHTML = `You're feeling ${emotion} ${emoji}. That's okay! ${getEmotionResponse(emotion)}`;
+    feedback.style.animation = 'slideUp 0.5s ease';
+  }
+  
+  speak(`You're feeling ${emotion}. ${getEmotionResponse(emotion)}`, { context: 'success' });
+}
+
+function getEmotionResponse(emotion) {
+  const responses = {
+    happy: "That's wonderful! Keep doing what makes you happy!",
+    sad: "It's okay to feel sad. Would you like to try a calming activity?",
+    angry: "Anger is a normal feeling. Let's take some deep breaths together.",
+    worried: "Everyone worries sometimes. You're safe and doing great.",
+    tired: "Rest is important. Maybe take a break?",
+    excited: "That's awesome! Channel that energy into something fun!",
+    frustrated: "Frustration happens. You're doing your best!",
+    calm: "Being calm is great! You're in a good place.",
+    confused: "It's okay to be confused. Take your time.",
+    scared: "You're safe. Would you like to talk to a grown-up?"
+  };
+  return responses[emotion] || "Thank you for sharing how you feel.";
+}
+
+function showDashSection(sectionName) {
+  document.querySelectorAll('.dash-section').forEach(section => {
+    section.classList.remove('active');
+    section.style.display = 'none';
+  });
+  
+  document.querySelectorAll('.dash-tab').forEach(tab => {
+    tab.classList.remove('active');
+    tab.setAttribute('aria-selected', 'false');
+  });
+  
+  const selectedSection = document.getElementById(sectionName + '-section');
+  if (selectedSection) {
+    selectedSection.classList.add('active');
+    selectedSection.style.display = 'block';
+  }
+  
+  const clickedTab = event.currentTarget;
+  if (clickedTab) {
+    clickedTab.classList.add('active');
+    clickedTab.setAttribute('aria-selected', 'true');
+  }
+  
+  Utils.announceToScreenReader(`Switched to ${sectionName} section`);
+}
+
+// ============================================================================
+// TERMS ACCEPTANCE
+// ============================================================================
+
 function checkTermsAcceptance() {
   const termsAccepted = localStorage.getItem('termsAccepted');
   if (!termsAccepted) {
@@ -5322,804 +5822,33 @@ function checkTermsAcceptance() {
   }
 }
 
-// Call this in your DOMContentLoaded event
-document.addEventListener('DOMContentLoaded', function() {
-  checkTermsAcceptance();
-  // ... rest of your initialization
-});
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM Content Loaded - Initializing app...');
   
-  // Initialize all systems
+  checkTermsAcceptance();
+  
   AppState.init();
   ThemeManager.init();
   TimerSystem.init();
   VoiceSystem.init();
   
-  // Populate profile selector
   populateProfileSelector();
   
-  // Load current profile if exists
   if (AppState.currentProfile) {
     switchProfile(AppState.currentProfile);
   }
   
-  // Show welcome panel for new users
   if (AppState.profiles.length === 0) {
     showWelcomePanel();
   }
   
-  // Initialize UI
   updateUI();
   
   console.log('App initialized successfully');
 });
-// ============================================================================
-// SOS CRISIS MODE SYSTEM
-// ============================================================================
 
-// ============================================================================
-// SOS CRISIS MODE SYSTEM
-// ============================================================================
-
-
-
-function activateSOSMode() {
-  console.log('SOS Mode activated');
-  sosActive = true;
-  sosStartTime = Date.now();
-  
-  const sosOverlay = document.getElementById('sosMode');
-  if (sosOverlay) {
-    sosOverlay.style.display = 'flex';
-    
-    // Stop all other sounds/activities
-    stopAllSounds();
-    stopAllExercises();
-    
-    // Log the SOS activation
-    logMeltdownEvent('sos_activated');
-    
-    // Speak calming message
-    speak("You're safe. I'm here to help you feel better.", {
-      context: 'sos',
-      priority: 'high',
-      rate: 0.8,
-      volume: 0.8
-    });
-    
-    Utils.announceToScreenReader('Emergency calming mode activated');
-  }
-}
-
-function exitSOSMode() {
-  const duration = sosStartTime ? Math.round((Date.now() - sosStartTime) / 1000) : 0;
-  
-  // Log successful calming
-  logMeltdownEvent('sos_resolved', {
-    duration: duration,
-    activityUsed: sosActivity
-  });
-  
-  const sosOverlay = document.getElementById('sosMode');
-  if (sosOverlay) {
-    sosOverlay.style.display = 'none';
-  }
-  
-  const activityContainer = document.getElementById('sosActivity');
-  if (activityContainer) {
-    activityContainer.innerHTML = '';
-    activityContainer.classList.remove('active');
-  }
-  
-  sosActive = false;
-  sosStartTime = null;
-  sosActivity = null;
-  
-  // Stop any ongoing activities
-  stopAllSounds();
-  if (sosBreathingInterval) {
-    clearInterval(sosBreathingInterval);
-    sosBreathingInterval = null;
-  }
-  
-  speak("Great job! You did so well calming down.", {
-    context: 'success',
-    priority: 'high'
-  });
-  
-  showSuccessMessage('You did an amazing job calming down!');
-  Utils.announceToScreenReader('Calming mode ended successfully');
-}
-
-// Simple SOS Breathing
-
-
-function startSOSBreathing() {
-  sosActivity = 'breathing';
-  const container = document.getElementById('sosActivity');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div class="sos-breathing-circle"></div>
-    <div class="sos-breathing-text" id="sosBreathText" aria-live="assertive">Breathe In...</div>
-  `;
-  container.classList.add('active');
-  
-  let phase = 0; // 0 = in, 1 = out
-  let count = 0;
-  
-  function updateBreathing() {
-    const text = document.getElementById('sosBreathText');
-    if (!text) return;
-    
-    if (phase === 0) {
-      text.textContent = 'Breathe In...';
-      text.style.color = '#4CAF50';
-      if (count === 0) {
-        VoiceSystem.speakBreathingCue('inhale', '');
-      }
-      count++;
-      if (count >= 4) {
-        phase = 1;
-        count = 0;
-      }
-    } else {
-      text.textContent = 'Breathe Out...';
-      text.style.color = '#2196F3';
-      if (count === 0) {
-        VoiceSystem.speakBreathingCue('exhale', '');
-      }
-      count++;
-      if (count >= 4) {
-        phase = 0;
-        count = 0;
-      }
-    }
-  }
-  
-  updateBreathing();
-  if (sosBreathingInterval) clearInterval(sosBreathingInterval);
-  sosBreathingInterval = setInterval(updateBreathing, 1000);
-  
-  speak("Breathe with me. In and out. Nice and slow.", {
-    context: 'breathing',
-    priority: 'high',
-    rate: 0.7
-  });
-}
-
-// SOS Sound
-function startSOSSound() {
-  sosActivity = 'sound';
-  const container = document.getElementById('sosActivity');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div style="text-align: center;">
-      <div style="font-size: 5rem; margin: 2rem 0;">🎵</div>
-      <p style="font-size: 1.5rem; color: #333;">Playing calming sounds...</p>
-    </div>
-  `;
-  container.classList.add('active');
-  
-  // Play brown noise (most calming)
-  playBrownNoise();
-  
-  speak("Listen to the calming sound. Let it help you relax.", {
-    context: 'sos',
-    priority: 'high',
-    rate: 0.7
-  });
-}
-
-// SOS Movement
-function startSOSMovement() {
-  sosActivity = 'movement';
-  const container = document.getElementById('sosActivity');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <h3 style="color: #333; margin-bottom: 1.5rem;">Try These Movements:</h3>
-    <div class="movement-cards">
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🤲</div>
-        <div>Push your hands together hard for 10 seconds</div>
-      </div>
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧱</div>
-        <div>Push against a wall as hard as you can</div>
-      </div>
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🪑</div>
-        <div>Push down on your chair with both hands</div>
-      </div>
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🦶</div>
-        <div>Stomp your feet 10 times</div>
-      </div>
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🫂</div>
-        <div>Give yourself a tight hug</div>
-      </div>
-      <div class="movement-card">
-        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧊</div>
-        <div>Hold something cold (ice, cold water)</div>
-      </div>
-    </div>
-  `;
-  container.classList.add('active');
-  
-  speak("Try some of these movements. They help your body feel better.", {
-    context: 'sos',
-    priority: 'high',
-    rate: 0.8
-  });
-}
-
-// Call for Help
-function callForHelp() {
-  sosActivity = 'help_called';
-  const container = document.getElementById('sosActivity');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div style="text-align: center;">
-      <div style="font-size: 5rem; margin: 2rem 0;">📢</div>
-      <p style="font-size: 1.8rem; color: #333; font-weight: bold;">
-        A grown-up has been notified!
-      </p>
-      <p style="font-size: 1.3rem; color: #666; margin-top: 1rem;">
-        Someone will come help you soon.
-      </p>
-    </div>
-  `;
-  container.classList.add('active');
-  
-  // Log that help was requested
-  logMeltdownEvent('help_requested');
-  
-  // Play alert sound if available
-  const tone = AudioManager.createTone(659, 0.3, 'sine');
-  if (tone) tone.play();
-  
-  speak("Help is on the way. You're doing great asking for help.", {
-    context: 'success',
-    priority: 'high'
-  });
-  
-  // In a real app, this would send a notification
-  // For now, show a message
-  showSuccessMessage('Parent/Caregiver notified!');
-}
-
-// ============================================================================
-// MELTDOWN TRACKING SYSTEM
-// ============================================================================
-
-function logMeltdownEvent(eventType, details = {}) {
-  if (!AppState.currentProfile) return;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile) return;
-  
-  // Initialize meltdown log if it doesn't exist
-  if (!profile.meltdownLog) {
-    profile.meltdownLog = [];
-  }
-  
-  const event = {
-    id: Date.now() + Math.random(),
-    type: eventType,
-    timestamp: new Date().toISOString(),
-    timeOfDay: new Date().getHours(),
-    dayOfWeek: new Date().getDay(),
-    ...details
-  };
-  
-  profile.meltdownLog.push(event);
-  
-  // Keep only last 100 events
-  if (profile.meltdownLog.length > 100) {
-    profile.meltdownLog = profile.meltdownLog.slice(-100);
-  }
-  
-  AppState.saveData();
-  console.log('Meltdown event logged:', event);
-}
-
-function getMeltdownPatterns() {
-  if (!AppState.currentProfile) return null;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile || !profile.meltdownLog) return null;
-  
-  const log = profile.meltdownLog.filter(e => e.type === 'sos_activated');
-  
-  if (log.length < 3) {
-    return { message: 'Not enough data yet to identify patterns' };
-  }
-  
-  // Analyze time of day patterns
-  const hourCounts = {};
-  log.forEach(event => {
-    const hour = event.timeOfDay;
-    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-  });
-  
-  const mostCommonHour = Object.keys(hourCounts).reduce((a, b) => 
-    hourCounts[a] > hourCounts[b] ? a : b
-  );
-  
-  // Analyze day of week patterns
-  const dayCounts = {};
-  log.forEach(event => {
-    const day = event.dayOfWeek;
-    dayCounts[day] = (dayCounts[day] || 0) + 1;
-  });
-  
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const mostCommonDay = days[Object.keys(dayCounts).reduce((a, b) => 
-    dayCounts[a] > dayCounts[b] ? a : b
-  )];
-  
-  // Calculate average duration
-  const resolvedEvents = profile.meltdownLog.filter(e => 
-    e.type === 'sos_resolved' && e.duration
-  );
-  const avgDuration = resolvedEvents.length > 0 
-    ? Math.round(resolvedEvents.reduce((sum, e) => sum + e.duration, 0) / resolvedEvents.length)
-    : null;
-  
-  // Most effective strategies
-  const strategyCounts = {};
-  resolvedEvents.forEach(event => {
-    if (event.activityUsed) {
-      strategyCounts[event.activityUsed] = (strategyCounts[event.activityUsed] || 0) + 1;
-    }
-  });
-  
-  const mostEffective = Object.keys(strategyCounts).length > 0
-    ? Object.keys(strategyCounts).reduce((a, b) => 
-        strategyCounts[a] > strategyCounts[b] ? a : b
-      )
-    : null;
-  
-  return {
-    totalEvents: log.length,
-    mostCommonHour: parseInt(mostCommonHour),
-    mostCommonDay: mostCommonDay,
-    averageDuration: avgDuration,
-    mostEffectiveStrategy: mostEffective,
-    last7Days: log.filter(e => {
-      const daysDiff = (Date.now() - new Date(e.timestamp)) / (1000 * 60 * 60 * 24);
-      return daysDiff <= 7;
-    }).length
-  };
-}
-
-// ============================================================================
-// PARENT DASHBOARD ADDITIONS
-// ============================================================================
-
-function updateChildStats() {
-  const statsDiv = Utils.safeGetElement('childStats');
-  if (!statsDiv) return;
-  
-  if (!AppState.currentProfile) {
-    statsDiv.innerHTML = '<p>No child profile selected</p>';
-    return;
-  }
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile) return;
-  
-  const completedTasks = profile.tasks ? profile.tasks.filter(t => t.completed).length : 0;
-  const totalBehaviors = profile.behaviors ? profile.behaviors.length : 0;
-  const totalTasks = profile.tasks ? profile.tasks.length : 0;
-  
-  // Get meltdown patterns
-  const patterns = getMeltdownPatterns();
-  
-  let html = `
-    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-      <h4 style="margin: 0 0 1rem 0; color: var(--accent-primary);">${profile.name} (${profile.age} years old)</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
-        <div style="text-align: center;">
-          <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${profile.rewardPoints || 0}</div>
-          <div style="font-size: 0.9rem; color: var(--text-secondary);">Total Points</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${completedTasks}/${totalTasks}</div>
-          <div style="font-size: 0.9rem; color: var(--text-secondary);">Tasks Done</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${totalBehaviors}</div>
-          <div style="font-size: 0.9rem; color: var(--text-secondary);">Good Behaviors</div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Add meltdown tracking section
-  if (patterns) {
-    html += `
-      <div class="meltdown-log">
-        <h4 style="color: #ff6b6b; margin: 1rem 0 0.5rem 0;">Regulation Patterns</h4>
-    `;
-    
-    if (patterns.message) {
-      html += `<p style="color: var(--text-secondary);">${patterns.message}</p>`;
-    } else {
-      html += `
-        <div class="pattern-insight">
-          <strong>Total SOS activations:</strong> ${patterns.totalEvents}<br>
-          <strong>Last 7 days:</strong> ${patterns.last7Days} events<br>
-          ${patterns.mostCommonHour ? `<strong>Most common time:</strong> ${formatHour(patterns.mostCommonHour)}<br>` : ''}
-          ${patterns.mostCommonDay ? `<strong>Most common day:</strong> ${patterns.mostCommonDay}<br>` : ''}
-          ${patterns.averageDuration ? `<strong>Average calming time:</strong> ${patterns.averageDuration} seconds<br>` : ''}
-          ${patterns.mostEffectiveStrategy ? `<strong>Most used strategy:</strong> ${patterns.mostEffectiveStrategy}` : ''}
-        </div>
-        <button onclick="viewDetailedLog()" style="background: #2196F3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; margin-top: 0.5rem;">
-          View Detailed Log
-        </button>
-        <button onclick="addWarningSigns()" style="background: #ff9800; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; margin-top: 0.5rem; margin-left: 0.5rem;">
-          Add Warning Signs
-        </button>
-      `;
-    }
-    
-    html += `</div>`;
-  }
-  
-  statsDiv.innerHTML = html;
-}
-
-function formatHour(hour) {
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-  return `${displayHour}:00 ${period}`;
-}
-
-function viewDetailedLog() {
-  if (!AppState.currentProfile) return;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile || !profile.meltdownLog) return;
-  
-  const log = profile.meltdownLog.filter(e => e.type === 'sos_activated')
-    .slice(-20)
-    .reverse();
-  
-  let html = `
-    <div class="modal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; overflow-y: auto;">
-      <div class="modal-content" style="max-width: 800px; margin: 2rem auto; max-height: 90vh; overflow-y: auto;">
-        <h3>Regulation Event Log for ${profile.name}</h3>
-        <div style="margin: 1rem 0;">
-  `;
-  
-  if (log.length === 0) {
-    html += '<p>No SOS events recorded yet.</p>';
-  } else {
-    log.forEach(event => {
-      const date = new Date(event.timestamp);
-      const resolved = profile.meltdownLog.find(e => 
-        e.type === 'sos_resolved' && 
-        Math.abs(new Date(e.timestamp) - date) < 600000 // Within 10 minutes
-      );
-      
-      html += `
-        <div class="meltdown-entry">
-          <strong>${date.toLocaleDateString()} ${date.toLocaleTimeString()}</strong><br>
-          Time of day: ${formatHour(event.timeOfDay)}<br>
-          ${resolved ? `Duration: ${resolved.duration} seconds<br>Strategy used: ${resolved.activityUsed || 'None'}` : 'Not resolved in log'}
-        </div>
-      `;
-    });
-  }
-  
-  html += `
-        </div>
-        <button onclick="this.closest('.modal').remove()" style="background: var(--accent-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
-          Close
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', html);
-}
-
-function addWarningSigns() {
-  if (!AppState.currentProfile) return;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile) return;
-  
-  let html = `
-    <div class="modal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001;">
-      <div class="modal-content" style="max-width: 600px; margin: 2rem auto;">
-        <h3>Warning Signs for ${profile.name}</h3>
-        <p style="color: var(--text-secondary);">What behaviors or signs happen before ${profile.name} needs help?</p>
-        
-        <div style="margin: 1rem 0;">
-          <input type="text" id="newWarningSign" placeholder="e.g., Gets very quiet, fidgets more, says 'I can't'" 
-                 style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-color); border-radius: 5px; margin-bottom: 0.5rem;">
-          <button onclick="saveWarningSign()" style="background: var(--success); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
-            Add Warning Sign
-          </button>
-        </div>
-        
-        <h4>Current Warning Signs:</h4>
-        <ul class="warning-signs-list" id="warningSignsList">
-          ${profile.warningSigns ? profile.warningSigns.map((sign, i) => `
-            <li>
-              ${sign}
-              <button onclick="removeWarningSign(${i})" style="float: right; background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
-                Remove
-              </button>
-            </li>
-          `).join('') : '<li>No warning signs added yet</li>'}
-        </ul>
-        
-        <button onclick="this.closest('.modal').remove()" style="background: var(--accent-primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
-          Close
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', html);
-}
-
-function saveWarningSign() {
-  if (!AppState.currentProfile) return;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile) return;
-  
-  const input = document.getElementById('newWarningSign');
-  if (!input || !input.value.trim()) return;
-  
-  if (!profile.warningSigns) {
-    profile.warningSigns = [];
-  }
-  
-  profile.warningSigns.push(input.value.trim());
-  AppState.saveData();
-  
-  input.value = '';
-  
-  // Refresh the list
-  const list = document.getElementById('warningSignsList');
-  if (list) {
-    list.innerHTML = profile.warningSigns.map((sign, i) => `
-      <li>
-        ${sign}
-        <button onclick="removeWarningSign(${i})" style="float: right; background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
-          Remove
-        </button>
-      </li>
-    `).join('');
-  }
-  
-  showSuccessMessage('Warning sign added');
-}
-
-function removeWarningSign(index) {
-  if (!AppState.currentProfile) return;
-  
-  const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-  if (!profile || !profile.warningSigns) return;
-  
-  profile.warningSigns.splice(index, 1);
-  AppState.saveData();
-  
-  // Refresh the list
-  const list = document.getElementById('warningSignsList');
-  if (list) {
-    if (profile.warningSigns.length === 0) {
-      list.innerHTML = '<li>No warning signs added yet</li>';
-    } else {
-      list.innerHTML = profile.warningSigns.map((sign, i) => `
-        <li>
-          ${sign}
-          <button onclick="removeWarningSign(${i})" style="float: right; background: var(--error); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
-            Remove
-          </button>
-        </li>
-      `).join('');
-    }
-  }
-  
-  showSuccessMessage('Warning sign removed');
-}
-function selectEmotion(emotion, emoji) {
-  // Remove previous selection
-  document.querySelectorAll('.emotion-card').forEach(card => {
-    card.classList.remove('selected');
-  });
-  
-  // Add selection to clicked card
-  event.currentTarget.classList.add('selected');
-  
-  // Log emotion if profile is selected
-  if (AppState.currentProfile) {
-    const profile = AppState.profiles.find(p => p.id === AppState.currentProfile);
-    if (profile) {
-      if (!profile.emotions) profile.emotions = [];
-      profile.emotions.push({
-        emotion: emotion,
-        emoji: emoji,
-        timestamp: new Date().toISOString()
-      });
-      AppState.saveData();
-    }
-  }
-  
-  // Show feedback
-  const feedback = document.getElementById('emotionFeedback');
-  if (feedback) {
-    feedback.innerHTML = `You're feeling ${emotion} ${emoji}. That's okay! ${getEmotionResponse(emotion)}`;
-    feedback.style.animation = 'slideUp 0.5s ease';
-  }
-  
-  // Voice feedback
-  speak(`You're feeling ${emotion}. ${getEmotionResponse(emotion)}`, { context: 'success' });
-}
-
-function getEmotionResponse(emotion) {
-  const responses = {
-    happy: "That's wonderful! Keep doing what makes you happy!",
-    sad: "It's okay to feel sad. Would you like to try a calming activity?",
-    angry: "Anger is a normal feeling. Let's take some deep breaths together.",
-    worried: "Everyone worries sometimes. You're safe and doing great.",
-    tired: "Rest is important. Maybe take a break?",
-    excited: "That's awesome! Channel that energy into something fun!",
-    frustrated: "Frustration happens. You're doing your best!",
-    calm: "Being calm is great! You're in a good place.",
-    confused: "It's okay to be confused. Take your time.",
-    scared: "You're safe. Would you like to talk to a grown-up?"
-  };
-  return responses[emotion] || "Thank you for sharing how you feel.";
-}
-
-function showDashSection(sectionName) {
-  // Hide all sections
-  document.querySelectorAll('.dash-section').forEach(section => {
-    section.classList.remove('active');
-    section.style.display = 'none';
-  });
-  
-  // Remove active from all tabs
-  document.querySelectorAll('.dash-tab').forEach(tab => {
-    tab.classList.remove('active');
-    tab.setAttribute('aria-selected', 'false');
-  });
-  
-  // Show selected section
-  const selectedSection = document.getElementById(sectionName + '-section');
-  if (selectedSection) {
-    selectedSection.classList.add('active');
-    selectedSection.style.display = 'block';
-  }
-  
-  // Activate clicked tab
-  const clickedTab = event.currentTarget;
-  if (clickedTab) {
-    clickedTab.classList.add('active');
-    clickedTab.setAttribute('aria-selected', 'true');
-  }
-  
-  Utils.announceToScreenReader(`Switched to ${sectionName} section`);
-}
-// Function to save parent settings including emergency contact
-function saveParentSettings() {
-  const taskPoints = parseInt(document.getElementById('taskPoints').value);
-  const behaviorPoints = parseInt(document.getElementById('behaviorPoints').value);
-  const emergencyContact = document.getElementById('emergencyContact').value;
-  
-  const settings = {
-    taskPoints: taskPoints,
-    behaviorPoints: behaviorPoints,
-    emergencyContact: emergencyContact
-  };
-  
-  localStorage.setItem('parentSettings', JSON.stringify(settings));
-  alert('Settings saved successfully!');
-}
-
-// Function to load parent settings
-function loadParentSettings() {
-  const settings = JSON.parse(localStorage.getItem('parentSettings')) || {
-    taskPoints: 5,
-    behaviorPoints: 3,
-    emergencyContact: ''
-  };
-  
-  if (document.getElementById('taskPoints')) {
-    document.getElementById('taskPoints').value = settings.taskPoints;
-    document.getElementById('behaviorPoints').value = settings.behaviorPoints;
-    document.getElementById('emergencyContact').value = settings.emergencyContact || '';
-  }
-}
-
-// Update the callForHelp function in your SOS mode
-function callForHelp() {
-  const settings = JSON.parse(localStorage.getItem('parentSettings')) || {};
-  const phoneNumber = settings.emergencyContact;
-  
-  const sosActivity = document.getElementById('sosActivity');
-  
-  if (!phoneNumber || phoneNumber.trim() === '') {
-    sosActivity.innerHTML = `
-      <div class="sos-help-message">
-        <h3>📱 Alert Parent</h3>
-        <p style="font-size: 1.2rem; margin: 1rem 0;">
-          Ask a parent to set up their phone number in Parent Login → Settings
-        </p>
-        <p style="margin-top: 2rem;">
-          For now, you can:
-        </p>
-        <button onclick="goFindAdult()" style="margin: 1rem; padding: 1rem 2rem; font-size: 1.1rem;">
-          Go Find a Grown-Up 🏃
-        </button>
-      </div>
-    `;
-    return;
-  }
-  
-  // Get child's name if available
-  const currentProfile = document.getElementById('currentProfile').value;
-  const childName = currentProfile || 'Your child';
-  
-  // Create the SMS message
-  const message = encodeURIComponent(`🆘 ${childName} needs help! They pressed the SOS button on their Helper Dashboard.`);
-  
-  // Clean phone number (remove spaces, dashes, etc.)
-  const cleanNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
-  
-  sosActivity.innerHTML = `
-    <div class="sos-help-message">
-      <h3>📱 Alerting Your Grown-Up</h3>
-      <p style="font-size: 1.2rem; margin: 1rem 0;">
-        Tap the button below to send a message
-      </p>
-      <a href="sms:${cleanNumber}?body=${message}" class="sos-sms-button">
-        📱 Send Help Message
-      </a>
-      <p style="margin-top: 2rem; font-size: 0.9rem; color: #666;">
-        This will open your messaging app. Tap send when it opens.
-      </p>
-    </div>
-  `;
-}
-
-// Helper function if no number is set
-function goFindAdult() {
-  const sosActivity = document.getElementById('sosActivity');
-  sosActivity.innerHTML = `
-    <div class="sos-help-message">
-      <h3>🏃 Go Find Your Grown-Up</h3>
-      <p style="font-size: 1.3rem; margin: 2rem 0;">
-        Walk to where your parent or caregiver is and let them know you need help.
-      </p>
-      <p style="font-size: 1.1rem;">
-        Take some deep breaths while you walk. 🫁
-      </p>
-    </div>
-  `;
-}
-
-// Make sure to call loadParentSettings when opening the parent dashboard
-function openParentDashboard() {
-  document.getElementById('parentDashboard').style.display = 'block';
-  document.getElementById('parentDashboard').setAttribute('aria-hidden', 'false');
-  loadParentSettings();
-  updateChildStats();
-}
-
-
-
-
+console.log('ADHD Helper JavaScript loaded successfully');

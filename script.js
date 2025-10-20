@@ -731,6 +731,60 @@ const VoiceSystem = {
       console.error('Error saving voice settings:', error);
     }
   },
+  populateVoiceSelect: function() {
+  const voiceSelect = Utils.safeGetElement('voiceSelect');
+  if (!voiceSelect) {
+    console.log('Voice select element not found, will retry later');
+    setTimeout(() => {
+      const retrySelect = Utils.safeGetElement('voiceSelect');
+      if (retrySelect) {
+        this.populateVoiceSelect();
+      }
+    }, 1000);
+    return;
+  }
+  
+  console.log('Populating voice select with', this.availableVoices.length, 'voices');
+  
+  // Detect device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  
+  voiceSelect.innerHTML = '<option value="">Select a voice...</option>';
+  
+  if (this.availableVoices.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = isMobile ? 'Loading mobile voices...' : 'Loading voices...';
+    option.disabled = true;
+    voiceSelect.appendChild(option);
+    return;
+  }
+  
+  this.availableVoices.forEach((voice, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    
+    // Simpler display on mobile
+    if (isMobile) {
+      option.textContent = voice.name;
+    } else {
+      option.textContent = `${voice.name} (${voice.lang})`;
+    }
+    
+    if (voice.default) {
+      option.textContent += ' ⭐';
+    }
+    
+    voiceSelect.appendChild(option);
+  });
+  
+  if (this.settings.selectedVoice !== null) {
+    voiceSelect.value = this.settings.selectedVoice;
+  }
+  
+  console.log('Voice selector populated with', this.availableVoices.length, 'voices');
+},
 
   loadSettings: function() {
     try {
@@ -749,103 +803,103 @@ const VoiceSystem = {
     }
   },
 
-  loadVoices: function() {
-    try {
-      const voices = speechSynthesis.getVoices();
-      console.log(`Found ${voices.length} voices:`, voices.map(v => `${v.name} (${v.lang})`));
+loadVoices: function() {
+  try {
+    const voices = speechSynthesis.getVoices();
+    console.log(`Found ${voices.length} voices:`, voices.map(v => `${v.name} (${v.lang})`));
+    
+    if (voices.length > 0) {
+      this.availableVoices = voices;
       
-      if (voices.length > 0) {
-        this.availableVoices = voices;
-        console.log('Voice selector populated successfully');
-        
-        this.populateVoiceSelect();
-        
-        setTimeout(() => {
-          this.populateVoiceSelect();
-        }, 100);
-        
-        setTimeout(() => {
-          const voiceSelect = Utils.safeGetElement('voiceSelect');
-          if (voiceSelect && voiceSelect.options.length <= 1) {
-            console.log('Retrying voice population...');
-            this.populateVoiceSelect();
-          }
-        }, 1000);
-        
-      } else {
-        console.log('No voices available yet, will retry...');
+      // Filter to show only English voices on mobile for simplicity
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        this.availableVoices = voices.filter(v => v.lang.startsWith('en'));
       }
-    } catch (error) {
-      console.error('Error loading voices:', error);
-    }
-  },
-
-  populateVoiceSelect: function() {
-    const voiceSelect = Utils.safeGetElement('voiceSelect');
-    if (!voiceSelect) {
-      console.log('Voice select element not found, will retry later');
+      
+      this.populateVoiceSelect();
+      
+      // Auto-select best voice for device
+      this.selectBestVoice();
+      
       setTimeout(() => {
-        const retrySelect = Utils.safeGetElement('voiceSelect');
-        if (retrySelect) {
+        this.populateVoiceSelect();
+      }, 100);
+      
+      setTimeout(() => {
+        const voiceSelect = Utils.safeGetElement('voiceSelect');
+        if (voiceSelect && voiceSelect.options.length <= 1) {
+          console.log('Retrying voice population...');
           this.populateVoiceSelect();
         }
       }, 1000);
-      return;
-    }
-    
-    console.log('Populating voice select with', this.availableVoices.length, 'voices');
-    
-    voiceSelect.innerHTML = '<option value="">Select a voice...</option>';
-    
-    if (this.availableVoices.length === 0) {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = 'Loading voices...';
-      option.disabled = true;
-      voiceSelect.appendChild(option);
-      return;
-    }
-    
-    this.availableVoices.forEach((voice, index) => {
-      const option = document.createElement('option');
-      option.value = index;
-      option.textContent = `${voice.name} (${voice.lang})`;
       
-      if (voice.default) {
-        option.textContent += ' [Default]';
-      }
-      
-      voiceSelect.appendChild(option);
-    });
-    
-    if (this.settings.selectedVoice === null) {
-      const englishVoiceIndex = this.availableVoices.findIndex(voice => 
-        voice.lang.startsWith('en')
-      );
-      
-      if (englishVoiceIndex !== -1) {
-        voiceSelect.value = englishVoiceIndex;
-        this.settings.selectedVoice = englishVoiceIndex;
-        this.saveSettings();
-        console.log('Auto-selected English voice:', this.availableVoices[englishVoiceIndex].name);
-      }
-    } else if (this.settings.selectedVoice !== null) {
-      voiceSelect.value = this.settings.selectedVoice;
+    } else {
+      console.log('No voices available yet, will retry...');
     }
-    
-    console.log('Voice selector populated with', this.availableVoices.length, 'voices');
-    console.log('Voice select now has', voiceSelect.options.length, 'options');
-  },
-
-  refreshVoices: function() {
-    console.log('Forcing voice refresh...');
-    this.loadVoices();
-    
-    setTimeout(() => this.loadVoices(), 500);
-    setTimeout(() => this.loadVoices(), 1000);
-    setTimeout(() => this.loadVoices(), 2000);
+  } catch (error) {
+    console.error('Error loading voices:', error);
   }
-};
+},
+
+selectBestVoice: function() {
+  if (this.settings.selectedVoice !== null) return; // User already chose
+  
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  
+  let preferredVoiceNames = [];
+  
+  if (isIOS) {
+    // iOS voice preferences (child-friendly)
+    preferredVoiceNames = [
+      'Samantha', // US female, clear
+      'Karen', // Australian female
+      'Daniel', // UK male
+      'Fred', // US male
+    ];
+  } else if (isAndroid) {
+    // Android voice preferences
+    preferredVoiceNames = [
+      'Google US English Female',
+      'en-US-Language',
+      'English United States',
+    ];
+  } else {
+    // Desktop preferences
+    preferredVoiceNames = [
+      'Microsoft Zira', // Windows
+      'Google US English', // Chrome
+      'Alex', // Mac
+      'Samantha', // Mac
+    ];
+  }
+  
+  // Try to find preferred voice
+  for (let prefName of preferredVoiceNames) {
+    const voiceIndex = this.availableVoices.findIndex(v => 
+      v.name.includes(prefName)
+    );
+    if (voiceIndex !== -1) {
+      this.settings.selectedVoice = voiceIndex;
+      this.saveSettings();
+      console.log('Auto-selected voice:', this.availableVoices[voiceIndex].name);
+      return;
+    }
+  }
+  
+  // Fallback: First English voice
+  const englishVoiceIndex = this.availableVoices.findIndex(v => 
+    v.lang.startsWith('en')
+  );
+  
+  if (englishVoiceIndex !== -1) {
+    this.settings.selectedVoice = englishVoiceIndex;
+    this.saveSettings();
+    console.log('Auto-selected English voice:', this.availableVoices[englishVoiceIndex].name);
+  }
+},
 
 // ============================================================================
 // ENHANCED SPEAK FUNCTIONS WITH CONTEXT AWARENESS
@@ -5852,3 +5906,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('ADHD Helper JavaScript loaded successfully');
+

@@ -3442,22 +3442,39 @@ function playWhiteNoise() {
   }
   
   try {
+    // Create improved white noise with better frequency distribution
     const bufferSize = context.sampleRate * 2;
-    const noiseBuffer = context.createBuffer(1, bufferSize, context.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
+    const noiseBuffer = context.createBuffer(2, bufferSize, context.sampleRate);
     
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
+    for (let channel = 0; channel < 2; channel++) {
+      const output = noiseBuffer.getChannelData(channel);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
     }
     
     const whiteNoise = context.createBufferSource();
     const gainNode = context.createGain();
     
+    // Add highpass filter to reduce harshness on low frequencies
+    const highpass = context.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = 100;
+    highpass.Q.value = 0.5;
+    
+    // Add slight lowpass to reduce harsh highs
+    const lowpass = context.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 12000;
+    lowpass.Q.value = 0.5;
+    
     whiteNoise.buffer = noiseBuffer;
     whiteNoise.loop = true;
-    whiteNoise.connect(gainNode);
+    whiteNoise.connect(highpass);
+    highpass.connect(lowpass);
+    lowpass.connect(gainNode);
     gainNode.connect(context.destination);
-    gainNode.gain.value = 0.3;
+    gainNode.gain.value = 0.25; // Slightly reduced volume for comfort
     
     whiteNoise.start();
     
@@ -3466,6 +3483,8 @@ function playWhiteNoise() {
         try {
           whiteNoise.stop();
           whiteNoise.disconnect();
+          highpass.disconnect();
+          lowpass.disconnect();
           gainNode.disconnect();
         } catch (e) {
           console.warn('Error stopping white noise:', e);
@@ -3492,26 +3511,39 @@ function playBrownNoise() {
   }
   
   try {
+    // Create improved brown noise with better filtering
     const bufferSize = context.sampleRate * 2;
-    const noiseBuffer = context.createBuffer(1, bufferSize, context.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
+    const noiseBuffer = context.createBuffer(2, bufferSize, context.sampleRate);
     
-    let lastOut = 0.0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      output[i] = (lastOut + (0.02 * white)) / 1.02;
-      lastOut = output[i];
-      output[i] *= 3.5;
+    // Generate brown noise for both channels
+    for (let channel = 0; channel < 2; channel++) {
+      const output = noiseBuffer.getChannelData(channel);
+      let lastOut = 0.0;
+      
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        // Improved brown noise algorithm with better filtering
+        output[i] = (lastOut + (0.015 * white)) / 1.015;
+        lastOut = output[i];
+        output[i] *= 4.0; // Amplify for better audibility
+      }
     }
     
     const brownNoise = context.createBufferSource();
     const gainNode = context.createGain();
     
+    // Add gentle lowpass filter for even smoother sound
+    const lowpass = context.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 800; // Lower frequency for deeper, warmer sound
+    lowpass.Q.value = 0.7;
+    
     brownNoise.buffer = noiseBuffer;
     brownNoise.loop = true;
-    brownNoise.connect(gainNode);
+    brownNoise.connect(lowpass);
+    lowpass.connect(gainNode);
     gainNode.connect(context.destination);
-    gainNode.gain.value = 0.2;
+    gainNode.gain.value = 0.18; // Adjusted volume for comfort
     
     brownNoise.start();
     
@@ -3520,6 +3552,7 @@ function playBrownNoise() {
         try {
           brownNoise.stop();
           brownNoise.disconnect();
+          lowpass.disconnect();
           gainNode.disconnect();
         } catch (e) {
           console.warn('Error stopping brown noise:', e);
@@ -3567,30 +3600,54 @@ function createHeartbeatLoop() {
     scheduleBeat: function() {
       if (!isPlaying) return;
       
-      this.createBeat(nextBeatTime, 100);
-      this.createBeat(nextBeatTime + 0.15, 80);
+      // Create realistic lub-dub pattern with proper frequencies
+      // "Lub" - first beat (louder, lower)
+      this.createBeat(nextBeatTime, 60, 0.3, 0.12); // Lower frequency, louder
       
-      nextBeatTime += 0.8;
-      setTimeout(() => this.scheduleBeat(), 700);
+      // "Dub" - second beat (softer, higher)
+      this.createBeat(nextBeatTime + 0.18, 80, 0.2, 0.10); // Higher frequency, softer
+      
+      // Natural heartbeat rhythm (60-70 BPM at rest)
+      nextBeatTime += 0.9; // ~67 BPM
+      setTimeout(() => this.scheduleBeat(), 850);
     },
     
-    createBeat: function(time, frequency) {
+    createBeat: function(time, frequency, volume, duration) {
       try {
         const oscillator = context.createOscillator();
         const gainNode = context.createGain();
         
-        oscillator.connect(gainNode);
+        // Add subtle filtering for more natural sound
+        const filter = context.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 300;
+        filter.Q.value = 1.0;
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
         gainNode.connect(context.destination);
         
         oscillator.frequency.value = frequency;
         oscillator.type = 'sine';
         
+        // More natural envelope
         gainNode.gain.setValueAtTime(0, time);
-        gainNode.gain.linearRampToValueAtTime(0.2, time + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+        gainNode.gain.linearRampToValueAtTime(volume, time + 0.02); // Quick attack
+        gainNode.gain.exponentialRampToValueAtTime(0.01, time + duration); // Natural decay
         
         oscillator.start(time);
-        oscillator.stop(time + 0.1);
+        oscillator.stop(time + duration + 0.05);
+        
+        // Clean up after sound finishes
+        setTimeout(() => {
+          try {
+            oscillator.disconnect();
+            filter.disconnect();
+            gainNode.disconnect();
+          } catch (e) {
+            // Already disconnected
+          }
+        }, (duration + 0.1) * 1000);
       } catch (error) {
         console.warn('Heartbeat beat creation error:', error);
       }
@@ -3604,6 +3661,70 @@ function createHeartbeatLoop() {
       return isPlaying;
     }
   };
+}
+
+// ============================================================================
+// MP3 VERSIONS OF CALMING SOUNDS
+// ============================================================================
+
+function playWhiteNoiseMp3() {
+  AudioManager.stopAllSounds();
+  
+  try {
+    const audio = new Audio('sounds/white.mp3');
+    audio.loop = true;
+    audio.volume = 0.25;
+    audio.play();
+    
+    AudioManager.currentAmbient = audio;
+    AudioManager.trackAudioSource(audio);
+    
+    showSuccessMessage('Playing white noise (MP3)...');
+    speak('Playing white noise for focus', { context: 'success' });
+  } catch (error) {
+    console.error('White noise MP3 error:', error);
+    showErrorMessage('Could not play white noise MP3');
+  }
+}
+
+function playBrownNoiseMp3() {
+  AudioManager.stopAllSounds();
+  
+  try {
+    const audio = new Audio('sounds/brown.mp3');
+    audio.loop = true;
+    audio.volume = 0.18;
+    audio.play();
+    
+    AudioManager.currentAmbient = audio;
+    AudioManager.trackAudioSource(audio);
+    
+    showSuccessMessage('Playing brown noise (MP3)...');
+    speak('Playing brown noise for deep focus', { context: 'success' });
+  } catch (error) {
+    console.error('Brown noise MP3 error:', error);
+    showErrorMessage('Could not play brown noise MP3');
+  }
+}
+
+function playHeartbeatMp3() {
+  AudioManager.stopAllSounds();
+  
+  try {
+    const audio = new Audio('sounds/heartbeat.mp3');
+    audio.loop = true;
+    audio.volume = 0.3;
+    audio.play();
+    
+    AudioManager.currentAmbient = audio;
+    AudioManager.trackAudioSource(audio);
+    
+    showSuccessMessage('Playing heartbeat (MP3)...');
+    speak('Playing calming heartbeat rhythm', { context: 'success' });
+  } catch (error) {
+    console.error('Heartbeat MP3 error:', error);
+    showErrorMessage('Could not play heartbeat MP3');
+  }
 }
 
 function createAmbientLoop(frequencies, waveType) {
